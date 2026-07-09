@@ -1,0 +1,82 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id            String   @id @default(uuid())
+  name          String
+  email         String   @unique
+  password      String
+  role          String   // "Customer" or "Organizer"
+  referralCode  String   @unique
+  pointsBalance Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Event {
+  id             String   @id @default(uuid())
+  name           String
+  description    String   @default("")
+  code           String   @unique // Unique event code, like SKU (e.g. MUSIC-JKT-001)
+  category       String   // e.g. Music, Tech, Arts, Workshop
+  price          Float    // Ticket price (IDR)
+  capacity       Int      // Total ticket capacity
+  availableSeats Int      // Remaining seats
+  date           String   // Date of the event (YYYY-MM-DD)
+  time           String   @default("19:00") // Time of the event
+  location       String   // Venue / City
+  status         String   // Active, Draft, Sold Out, Archived
+  organizerId    String?  // Optional relation identifier
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Transaction {
+  id              String   @id @default(uuid())
+  eventId         String
+  eventName       String
+  buyerId         String
+  buyerName       String
+  originalPrice   Float
+  discountApplied Float
+  finalPrice      Float
+  pointsUsed      Int      @default(0)
+  couponUsed      Boolean  @default(false)
+  purchaseDate    String   // Date string (YYYY-MM-DD)
+  createdAt       DateTime @default(now())
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  eventId   String
+  userId    String
+  userName  String
+  rating    Int      // 1 to 5
+  feedback  String
+  createdAt DateTime @default(now())
+}
+
+model PointRecord {
+  id         String   @id @default(uuid())
+  userId     String
+  amount     Int
+  source     String   // e.g., "Referral Signup from User B"
+  expiryDate String   // YYYY-MM-DD
+  isUsed     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+}
+
+model Coupon {
+  id         String   @id @default(uuid())
+  userId     String
+  code       String
+  discount   Float    // e.g. 0.10 for 10%
+  expiryDate String   // YYYY-MM-DD
+  isUsed     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+}

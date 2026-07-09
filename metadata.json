@@ -1,0 +1,6 @@
+{
+  "name": "Event Management Platform",
+  "description": "A sophisticated full-stack Event Management Platform built with Express, Prisma, React, and Tailwind CSS. Features curated event scheduling, custom unique ticket codes, ticket price tracking, real-time availability capacity indicators, and seamless CRUD operations.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
