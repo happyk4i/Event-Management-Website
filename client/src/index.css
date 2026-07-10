@@ -1,8 +1,481 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&family=Rubik:wght@400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-serif: "Playfair Display", Georgia, ui-serif, serif;
-  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --font-sans: "Space Grotesk", "Rubik", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Rubik", Georgia, ui-serif, serif;
+  --font-mono: "Space Mono", ui-monospace, monospace;
+}
+
+:root {
+  /* Neo-Brutalism Color Palette */
+  --nb-yellow: #FFD700;
+  --nb-pink: #FF6B9D;
+  --nb-cyan: #00D4FF;
+  --nb-lime: #7CFC00;
+  --nb-purple: #B388FF;
+  --nb-orange: #FF8C42;
+  --nb-red: #FF4757;
+  --nb-blue: #4ECDC4;
+  --nb-dark: #1a1a2e;
+  --nb-cream: #FFFEF9;
+  --nb-border: #1a1a2e;
+  --nb-shadow: #1a1a2e;
+}
+
+/* ============================================
+   CUSTOM SCROLLBAR
+   ============================================ */
+::-webkit-scrollbar {
+  width: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--nb-cream);
+  border-left: 3px solid var(--nb-dark);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--nb-yellow);
+  border: 3px solid var(--nb-dark);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--nb-pink);
+}
+
+/* ============================================
+   KEYFRAME ANIMATIONS
+   ============================================ */
+
+/* Marquee scroll */
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+/* Float up-down */
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-12px);
+  }
+}
+
+/* Shake on hover */
+@keyframes shake {
+
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+
+  25% {
+    transform: rotate(-2deg);
+  }
+
+  75% {
+    transform: rotate(2deg);
+  }
+}
+
+/* Glitch effect */
+@keyframes glitch {
+
+  0%,
+  100% {
+    text-shadow: 2px 0 var(--nb-pink), -2px 0 var(--nb-cyan);
+  }
+
+  25% {
+    text-shadow: -2px 0 var(--nb-pink), 2px 0 var(--nb-cyan);
+  }
+
+  50% {
+    text-shadow: 2px 2px var(--nb-pink), -2px -2px var(--nb-cyan);
+  }
+
+  75% {
+    text-shadow: -2px 2px var(--nb-cyan), 2px -2px var(--nb-pink);
+  }
+}
+
+/* Bounce enter */
+@keyframes bounceIn {
+  0% {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+
+  50% {
+    transform: scale(1.05);
+  }
+
+  70% {
+    transform: scale(0.9);
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Pulse glow */
+@keyframes pulseGlow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.4);
+  }
+
+  50% {
+    box-shadow: 0 0 0 12px rgba(255, 215, 0, 0);
+  }
+}
+
+/* Slide in from bottom */
+@keyframes slideUp {
+  0% {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Rotate continuous */
+@keyframes rotateSlow {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Card entrance stagger */
+@keyframes cardEnter {
+  0% {
+    transform: translateY(40px) scale(0.95);
+    opacity: 0;
+  }
+
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Wiggle */
+@keyframes wiggle {
+
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+
+  15% {
+    transform: rotate(-5deg);
+  }
+
+  30% {
+    transform: rotate(5deg);
+  }
+
+  45% {
+    transform: rotate(-3deg);
+  }
+
+  60% {
+    transform: rotate(3deg);
+  }
+
+  75% {
+    transform: rotate(-1deg);
+  }
+}
+
+/* Confetti explosion */
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(-100vh) rotate(0deg);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(100vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+/* ============================================
+   ANIMATION UTILITY CLASSES
+   ============================================ */
+.animate-marquee {
+  animation: marquee 20s linear infinite;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-shake-hover:hover {
+  animation: shake 0.4s ease-in-out;
+}
+
+.animate-glitch {
+  animation: glitch 2s ease-in-out infinite;
+}
+
+.animate-bounce-in {
+  animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.5s ease-out;
+}
+
+.animate-wiggle:hover {
+  animation: wiggle 0.5s ease-in-out;
+}
+
+.animate-card-enter {
+  animation: cardEnter 0.5s ease-out both;
+}
+
+/* Stagger delays for cards */
+.stagger-1 {
+  animation-delay: 0.05s;
+}
+
+.stagger-2 {
+  animation-delay: 0.1s;
+}
+
+.stagger-3 {
+  animation-delay: 0.15s;
+}
+
+.stagger-4 {
+  animation-delay: 0.2s;
+}
+
+.stagger-5 {
+  animation-delay: 0.25s;
+}
+
+.stagger-6 {
+  animation-delay: 0.3s;
+}
+
+/* ============================================
+   NEO-BRUTALISM COMPONENT STYLES
+   ============================================ */
+
+/* Hard shadow box */
+.nb-shadow {
+  box-shadow: 4px 4px 0px var(--nb-shadow);
+}
+
+.nb-shadow-sm {
+  box-shadow: 3px 3px 0px var(--nb-shadow);
+}
+
+.nb-shadow-lg {
+  box-shadow: 8px 8px 0px var(--nb-shadow);
+}
+
+.nb-shadow-xl {
+  box-shadow: 12px 12px 0px var(--nb-shadow);
+}
+
+/* Shadow colors */
+.nb-shadow-yellow {
+  box-shadow: 4px 4px 0px var(--nb-yellow);
+}
+
+.nb-shadow-pink {
+  box-shadow: 4px 4px 0px var(--nb-pink);
+}
+
+.nb-shadow-cyan {
+  box-shadow: 4px 4px 0px var(--nb-cyan);
+}
+
+.nb-shadow-lime {
+  box-shadow: 4px 4px 0px var(--nb-lime);
+}
+
+.nb-shadow-purple {
+  box-shadow: 4px 4px 0px var(--nb-purple);
+}
+
+/* Hard border */
+.nb-border {
+  border: 3px solid var(--nb-border);
+}
+
+.nb-border-thick {
+  border: 4px solid var(--nb-border);
+}
+
+/* Interactive card hover — shift shadow */
+.nb-card-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.nb-card-hover:hover {
+  transform: translate(-4px, -4px);
+  box-shadow: 8px 8px 0px var(--nb-shadow);
+}
+
+.nb-card-hover:active {
+  transform: translate(0px, 0px);
+  box-shadow: 0px 0px 0px var(--nb-shadow);
+}
+
+/* Neo-brutal button base */
+.nb-btn {
+  border: 3px solid var(--nb-dark);
+  box-shadow: 4px 4px 0px var(--nb-dark);
+  transition: all 0.15s ease;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+}
+
+.nb-btn:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px var(--nb-dark);
+}
+
+.nb-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 0px 0px 0px var(--nb-dark);
+}
+
+/* Neo-brutal input */
+.nb-input {
+  border: 3px solid var(--nb-dark);
+  background: white;
+  padding: 0.625rem 0.875rem;
+  font-size: 0.8rem;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+  outline: none;
+}
+
+.nb-input:focus {
+  box-shadow: 4px 4px 0px var(--nb-yellow);
+  border-color: var(--nb-yellow);
+}
+
+.nb-input::placeholder {
+  color: #999;
+  font-style: italic;
+}
+
+/* Neo-brutal select */
+.nb-select {
+  border: 3px solid var(--nb-dark);
+  background: white;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  outline: none;
+  transition: box-shadow 0.15s ease;
+}
+
+.nb-select:focus {
+  box-shadow: 4px 4px 0px var(--nb-cyan);
+}
+
+/* Dot grid background pattern */
+.dot-grid-bg {
+  background-image: radial-gradient(circle, #ddd 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Cross-hatch pattern */
+.crosshatch-bg {
+  background-image: repeating-linear-gradient(45deg,
+      transparent,
+      transparent 10px,
+      rgba(0, 0, 0, 0.03) 10px,
+      rgba(0, 0, 0, 0.03) 11px);
+}
+
+/* Striped accent */
+.striped-bg {
+  background-image: repeating-linear-gradient(-45deg,
+      transparent,
+      transparent 5px,
+      rgba(0, 0, 0, 0.05) 5px,
+      rgba(0, 0, 0, 0.05) 10px);
+}
+
+/* ============================================
+   MODAL OVERLAY
+   ============================================ */
+.nb-overlay {
+  background: rgba(26, 26, 46, 0.85);
+  backdrop-filter: blur(4px);
+}
+
+/* ============================================
+   CONFETTI PARTICLES
+   ============================================ */
+.confetti-piece {
+  position: fixed;
+  width: 10px;
+  height: 10px;
+  top: -10px;
+  z-index: 9999;
+  animation: confetti-fall 3s linear forwards;
+}
+
+/* ============================================
+   3D CANVAS CONTAINER
+   ============================================ */
+.three-canvas-container {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.three-canvas-container canvas {
+  pointer-events: auto;
+}
+
+/* ============================================
+   RESPONSIVE OVERRIDES
+   ============================================ */
+@media (max-width: 768px) {
+  .nb-shadow-lg {
+    box-shadow: 4px 4px 0px var(--nb-shadow);
+  }
+
+  .nb-shadow-xl {
+    box-shadow: 6px 6px 0px var(--nb-shadow);
+  }
 }
