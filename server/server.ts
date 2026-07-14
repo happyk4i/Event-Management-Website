@@ -4,7 +4,7 @@ import { createServer as createViteServer } from 'vite';
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = Number(process.env.PORT || 3000);
 
   // JSON parsing middleware
   app.use(express.json());
@@ -13,6 +13,10 @@ async function startServer() {
   app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date() });
   });
+
+  // AI chatbot endpoint
+  const { chatRouter } = await import('./routes/chat.js');
+  app.use('/api/chat', chatRouter);
 
   // Events REST endpoints
   const { eventsRouter } = await import('./routes/events.js');

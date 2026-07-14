@@ -1,18 +1,18 @@
 import React, { useState, useEffect, Suspense } from 'react';
-import { 
-  Plus, 
-  Search, 
-  Edit, 
-  Trash2, 
-  Database, 
-  Sparkles, 
-  Calendar, 
+import {
+  Plus,
+  Search,
+  Edit,
+  Trash2,
+  Database,
+  Sparkles,
+  Calendar,
   MapPin,
   Users,
-  AlertCircle, 
-  X, 
-  Check, 
-  Loader2, 
+  AlertCircle,
+  X,
+  Check,
+  Loader2,
   RefreshCw,
   Tag,
   DollarSign,
@@ -48,19 +48,20 @@ import {
   Zap,
   Crown
 } from 'lucide-react';
-import { 
-  ResponsiveContainer, 
-  AreaChart, 
-  Area, 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend 
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend
 } from 'recharts';
 import { Event, CATEGORIES, STATUSES, User as UserType, Transaction, Review, Coupon, PointRecord } from './types.js';
+import EventChat from './components/EventChat.js';
 
 // Lazy load 3D Scene
 const Scene3D = React.lazy(() => import('./Scene3D.js'));
@@ -71,7 +72,10 @@ export default function App() {
     const saved = localStorage.getItem('ephemeral_user');
     return saved ? JSON.parse(saved) : null;
   });
-  const [userProfile, setUserProfile] = useState<{pointRecords: PointRecord[]; coupons: Coupon[]} | null>(null);
+  const [userProfile, setUserProfile] = useState<{ pointRecords: PointRecord[]; coupons: Coupon[] } | null>(null);
+
+  // AI assistant panel
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   // Core Event Lists & Pagination States
   const [events, setEvents] = useState<Event[]>([]);
@@ -108,7 +112,7 @@ export default function App() {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
-  
+
   // Event Details Modal & Checkout
   const [isDetailsOpen, setIsDetailsOpen] = useState<boolean>(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
@@ -445,7 +449,7 @@ export default function App() {
 
       showToast(`Booking Confirmed! Seat secured for "${selectedEvent.name}".`);
       setIsDetailsOpen(false);
-      
+
       // Update local catalogs
       fetchEvents();
       fetchUserProfile();
@@ -656,20 +660,20 @@ export default function App() {
       setFormError('Type an Event Title first to generate a structured SKU code.');
       return;
     }
-    
+
     const cleanWords = formName
       .toUpperCase()
       .replace(/[^A-Z0-9 ]/g, '')
       .split(' ')
       .filter(Boolean);
-    
+
     let prefix = 'EV';
     if (cleanWords.length >= 2) {
       prefix = cleanWords.slice(0, 3).map((w: string | any[]) => w.slice(0, 2)).join('');
     } else if (cleanWords.length === 1) {
       prefix = cleanWords[0].slice(0, 4);
     }
-    
+
     const yearPart = formDate ? formDate.split('-')[0] : new Date().getFullYear();
     const randCode = Math.floor(100 + Math.random() * 900);
     setFormCode(`${prefix}-${yearPart}-${randCode}`);
@@ -727,7 +731,7 @@ export default function App() {
   const renderExpirationsWarning = () => {
     if (!userProfile) return null;
     const today = new Date();
-    
+
     // Check points records that will expire within the next 30 days
     const closeToExpirePoints = userProfile.pointRecords.filter((r: { isUsed: any; expiryDate: string | number | Date; }) => {
       if (r.isUsed) return false;
@@ -768,7 +772,7 @@ export default function App() {
   const getCheckoutPricing = () => {
     if (!selectedEvent) return { originalPrice: 0, earlyBird: 0, coupon: 0, points: 0, finalPrice: 0 };
     let orig = selectedEvent.price;
-    
+
     // Date-based 5% early bird discount (if scheduled date > 30 days out)
     let earlyBird = 0;
     const daysOut = (new Date(selectedEvent.date).getTime() - new Date().getTime()) / (1000 * 3600 * 24);
@@ -808,15 +812,14 @@ export default function App() {
   // ===================================================================
   return (
     <div className="min-h-screen bg-[#FFFEF9] dot-grid-bg text-[#1a1a2e] flex flex-col font-sans selection:bg-[#FFD700]/40" id="app-root-container">
-      
+
       {/* =================== TOAST NOTIFICATION =================== */}
       {toast && (
-        <div 
-          className={`fixed top-6 right-6 z-[100] flex items-center space-x-3 px-5 py-4 nb-border animate-bounce-in ${
-            toast.type === 'success' 
-              ? 'bg-[#7CFC00] nb-shadow' 
-              : 'bg-[#FF4757] text-white nb-shadow'
-          }`}
+        <div
+          className={`fixed top-6 right-6 z-[100] flex items-center space-x-3 px-5 py-4 nb-border animate-bounce-in ${toast.type === 'success'
+            ? 'bg-[#7CFC00] nb-shadow'
+            : 'bg-[#FF4757] text-white nb-shadow'
+            }`}
           id="toast-alert"
         >
           <div className={`p-2 rounded-full ${toast.type === 'success' ? 'bg-[#1a1a2e] text-[#7CFC00]' : 'bg-white text-[#FF4757]'}`}>
@@ -843,7 +846,6 @@ export default function App() {
               <span>★</span>
               <span className="flex items-center space-x-2"><Crown className="h-3.5 w-3.5" /><span>Referral Rewards Active</span></span>
               <span>★</span>
-              <span className="flex items-center space-x-2"><Sparkles className="h-3.5 w-3.5" /><span>Neo-Brutal Experience</span></span>
               <span>★</span>
             </React.Fragment>
           ))}
@@ -853,7 +855,7 @@ export default function App() {
       {/* =================== NAVIGATION HEADER =================== */}
       <nav className="bg-white nb-border border-t-0 sticky top-0 z-40 px-6 py-4" id="main-navigation">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          
+
           {/* Brand Logo — Neo-Brutalist */}
           <div className="flex items-center space-x-3 cursor-pointer group" onClick={() => setActiveTab('explore')}>
             <div className="h-12 w-12 bg-[#FFD700] text-[#1a1a2e] flex items-center justify-center nb-border nb-shadow-sm group-hover:translate-x-[-2px] group-hover:translate-y-[-2px] transition-transform">
@@ -861,31 +863,28 @@ export default function App() {
             </div>
             <div>
               <h1 className="font-black text-2xl tracking-tight text-[#1a1a2e] animate-glitch">EVENT KUY</h1>
-              <p className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#FF6B9D]">Neo-Brutal Event Hub 🔥</p>
             </div>
           </div>
 
           {/* Center Tabs */}
           {currentUser && (
             <div className="flex items-center nb-border bg-[#FFFEF9] p-1">
-              <button 
+              <button
                 onClick={() => setActiveTab('explore')}
-                className={`px-5 py-2 text-xs font-black uppercase tracking-wider transition-all ${
-                  activeTab === 'explore' 
-                    ? 'bg-[#FFD700] text-[#1a1a2e] nb-shadow-sm' 
-                    : 'text-gray-500 hover:bg-gray-100'
-                }`}
+                className={`px-5 py-2 text-xs font-black uppercase tracking-wider transition-all ${activeTab === 'explore'
+                  ? 'bg-[#FFD700] text-[#1a1a2e] nb-shadow-sm'
+                  : 'text-gray-500 hover:bg-gray-100'
+                  }`}
               >
                 ⚡ Explore
               </button>
               {currentUser.role === 'Organizer' && (
-                <button 
+                <button
                   onClick={() => setActiveTab('dashboard')}
-                  className={`px-5 py-2 text-xs font-black uppercase tracking-wider transition-all ${
-                    activeTab === 'dashboard' 
-                      ? 'bg-[#00D4FF] text-[#1a1a2e] nb-shadow-sm' 
-                      : 'text-gray-500 hover:bg-gray-100'
-                  }`}
+                  className={`px-5 py-2 text-xs font-black uppercase tracking-wider transition-all ${activeTab === 'dashboard'
+                    ? 'bg-[#00D4FF] text-[#1a1a2e] nb-shadow-sm'
+                    : 'text-gray-500 hover:bg-gray-100'
+                    }`}
                 >
                   📊 Dashboard
                 </button>
@@ -911,9 +910,8 @@ export default function App() {
               <div className="flex items-center space-x-3">
                 <div className="text-right hidden sm:block">
                   <p className="text-sm font-black text-[#1a1a2e]">{currentUser.name}</p>
-                  <span className={`text-[10px] font-mono font-black uppercase tracking-wider px-2 py-0.5 inline-block ${
-                    currentUser.role === 'Organizer' ? 'bg-[#00D4FF]' : 'bg-[#7CFC00]'
-                  } border-2 border-[#1a1a2e]`}>
+                  <span className={`text-[10px] font-mono font-black uppercase tracking-wider px-2 py-0.5 inline-block ${currentUser.role === 'Organizer' ? 'bg-[#00D4FF]' : 'bg-[#7CFC00]'
+                    } border-2 border-[#1a1a2e]`}>
                     {currentUser.role}
                   </span>
                 </div>
@@ -937,7 +935,7 @@ export default function App() {
           <Suspense fallback={null}>
             <Scene3D />
           </Suspense>
-          
+
           {/* Hero Content Overlay */}
           <div className="relative z-10 max-w-7xl mx-auto px-6 py-16 flex flex-col items-center text-center">
             <div className="animate-slide-up">
@@ -950,11 +948,11 @@ export default function App() {
                 <span className="text-[#FF6B9D]">Near You</span> 🔥
               </h2>
               <p className="mt-4 text-base text-gray-300 max-w-xl mx-auto font-medium">
-                Temukan event musik, tech, food, workshop terbaik di Indonesia. 
+                Temukan event musik, tech, food, workshop terbaik di Indonesia.
                 Book tiket, dapatkan diskon, dan nikmati pengalaman yang unforgettable!
               </p>
             </div>
-            
+
             {/* Floating stat pills */}
             <div className="flex flex-wrap items-center justify-center gap-4 mt-8 animate-slide-up" style={{ animationDelay: '0.2s' }}>
               <div className="bg-[#FFD700] nb-border px-4 py-2 text-[#1a1a2e] text-sm font-black flex items-center space-x-2 nb-shadow-sm animate-float">
@@ -988,11 +986,11 @@ export default function App() {
 
       {/* =================== MAIN CONTAINER =================== */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-6 space-y-8">
-        
+
         {/* =================== VIEW 1: EXPLORE CATALOG =================== */}
         {activeTab === 'explore' && (
           <div className="space-y-8" id="explore-panel">
-            
+
             {/* Customer Points & Voucher widget */}
             {currentUser && currentUser.role === 'Customer' && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -1001,7 +999,7 @@ export default function App() {
                   <span className="text-[10px] uppercase font-black tracking-widest text-[#1a1a2e] block mb-2">🎯 Your Referral Code</span>
                   <div className="flex items-center space-x-2.5">
                     <span className="text-base font-mono font-black text-[#1a1a2e] tracking-wider bg-white nb-border px-3 py-1.5">{currentUser.referralCode}</span>
-                    <button 
+                    <button
                       onClick={() => {
                         navigator.clipboard.writeText(currentUser.referralCode);
                         showToast('Referral code copied to clipboard!');
@@ -1030,7 +1028,7 @@ export default function App() {
                   <div className="flex items-center space-x-2">
                     <Tag className="h-5 w-5" />
                     <span className="text-sm font-black text-[#1a1a2e]">
-                      {userProfile?.coupons && userProfile.coupons.length > 0 
+                      {userProfile?.coupons && userProfile.coupons.length > 0
                         ? `${userProfile.coupons.length} Coupon(s) (10% OFF)`
                         : 'No coupons available'
                       }
@@ -1044,7 +1042,7 @@ export default function App() {
             {/* Filter, Search & Location */}
             <div className="bg-white nb-border p-5 nb-shadow space-y-4" id="filters-container">
               <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-4">
-                
+
                 {/* Search Input */}
                 <div className="relative flex-1">
                   <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
@@ -1132,13 +1130,6 @@ export default function App() {
                   >
                     <Grid className="h-4 w-4" />
                   </button>
-                  <button
-                    onClick={() => setViewMode('list')}
-                    className={`p-2 transition-all ${viewMode === 'list' ? 'bg-[#00D4FF] text-[#1a1a2e] nb-shadow-sm' : 'text-gray-400 hover:text-gray-700'}`}
-                    title="List layout"
-                  >
-                    <List className="h-4 w-4" />
-                  </button>
                 </div>
               </div>
 
@@ -1167,7 +1158,7 @@ export default function App() {
                 <ShieldAlert className="h-14 w-14 mb-3" />
                 <h3 className="text-sm font-black uppercase tracking-widest">DATABASE ERROR!</h3>
                 <p className="text-xs mt-1.5 max-w-md leading-relaxed">{error}</p>
-                <button 
+                <button
                   onClick={fetchEvents}
                   className="mt-5 nb-btn px-5 py-2.5 bg-white text-[#1a1a2e] text-xs"
                 >
@@ -1195,7 +1186,7 @@ export default function App() {
                 </button>
               </div>
             ) : viewMode === 'grid' ? (
-              
+
               /* ===== GRID LAYOUT ===== */
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="grid-layout">
                 {events.map((ev: Event, index: number) => {
@@ -1205,19 +1196,19 @@ export default function App() {
                   const accent = getCardAccent(index);
 
                   return (
-                    <div 
-                      key={ev.id} 
+                    <div
+                      key={ev.id}
                       onClick={() => handleOpenDetails(ev)}
                       onMouseEnter={() => setHoveredCard(ev.id)}
                       onMouseLeave={() => setHoveredCard(null)}
                       className={`bg-white nb-border-thick nb-card-hover flex flex-col cursor-pointer relative group overflow-hidden animate-card-enter stagger-${(index % 6) + 1}`}
-                      style={{ 
+                      style={{
                         boxShadow: hoveredCard === ev.id ? `8px 8px 0px ${accent}` : '4px 4px 0px #1a1a2e',
                       }}
                     >
                       {/* Colored top accent bar */}
                       <div className="h-2" style={{ backgroundColor: accent }} />
-                      
+
                       {/* Category & Actions */}
                       <div className="px-5 pt-4 flex items-center justify-between">
                         <span className={`text-[10px] font-black uppercase tracking-wider px-3 py-1.5 border-2 ${getCategoryColor(ev.category)} flex items-center space-x-1.5`}>
@@ -1284,23 +1275,21 @@ export default function App() {
                       <div className="px-5 pb-4 pt-3 bg-gray-50 space-y-2.5 border-t-3 border-[#1a1a2e]">
                         <div className="flex items-center justify-between text-[11px]">
                           <span className="text-gray-500 font-bold">Seat Inventory</span>
-                          <span className={`font-mono font-black px-2.5 py-1 border-2 border-[#1a1a2e] text-[10px] ${
-                            isSoldOut 
-                              ? 'bg-[#FF4757] text-white' 
-                              : isLowStock 
-                                ? 'bg-[#FFD700] text-[#1a1a2e] animate-pulse' 
-                                : 'bg-[#7CFC00] text-[#1a1a2e]'
-                          }`}>
+                          <span className={`font-mono font-black px-2.5 py-1 border-2 border-[#1a1a2e] text-[10px] ${isSoldOut
+                            ? 'bg-[#FF4757] text-white'
+                            : isLowStock
+                              ? 'bg-[#FFD700] text-[#1a1a2e] animate-pulse'
+                              : 'bg-[#7CFC00] text-[#1a1a2e]'
+                            }`}>
                             {isSoldOut ? '🚫 SOLD OUT' : `${ev.availableSeats} / ${ev.capacity} left`}
                           </span>
                         </div>
 
                         {/* Progress bar */}
                         <div className="h-3 w-full bg-gray-200 nb-border border-2 overflow-hidden">
-                          <div 
-                            className={`h-full transition-all duration-500 ${
-                              isSoldOut ? 'bg-[#FF4757]' : isLowStock ? 'bg-[#FFD700]' : 'bg-[#7CFC00]'
-                            }`}
+                          <div
+                            className={`h-full transition-all duration-500 ${isSoldOut ? 'bg-[#FF4757]' : isLowStock ? 'bg-[#FFD700]' : 'bg-[#7CFC00]'
+                              }`}
                             style={{ width: `${Math.min(100, Math.max(0, capacityPercent))}%` }}
                           />
                         </div>
@@ -1310,7 +1299,7 @@ export default function App() {
                 })}
               </div>
             ) : (
-              
+
               /* ===== LIST TABLE LAYOUT ===== */
               <div className="bg-white nb-border nb-shadow overflow-hidden" id="list-layout">
                 <div className="overflow-x-auto">
@@ -1358,9 +1347,8 @@ export default function App() {
                               {ev.price === 0 ? <span className="bg-[#7CFC00] border-2 border-[#1a1a2e] px-2 py-0.5 text-[10px]">FREE!</span> : formatRupiah(ev.price)}
                             </td>
                             <td className="py-4 px-5 text-center">
-                              <span className={`inline-block font-mono font-black px-3 py-1 border-2 border-[#1a1a2e] text-[10px] ${
-                                isSoldOut ? 'bg-[#FF4757] text-white' : 'bg-[#7CFC00] text-[#1a1a2e]'
-                              }`}>
+                              <span className={`inline-block font-mono font-black px-3 py-1 border-2 border-[#1a1a2e] text-[10px] ${isSoldOut ? 'bg-[#FF4757] text-white' : 'bg-[#7CFC00] text-[#1a1a2e]'
+                                }`}>
                                 {isSoldOut ? '🚫 SOLD OUT' : `${ev.availableSeats} / ${ev.capacity}`}
                               </span>
                             </td>
@@ -1396,11 +1384,10 @@ export default function App() {
                     <button
                       key={idx}
                       onClick={() => setCurrentPage(idx + 1)}
-                      className={`nb-btn px-3.5 py-1.5 text-xs font-mono transition-all ${
-                        currentPage === idx + 1
-                          ? 'bg-[#1a1a2e] text-[#FFD700]'
-                          : 'bg-white text-[#1a1a2e]'
-                      }`}
+                      className={`nb-btn px-3.5 py-1.5 text-xs font-mono transition-all ${currentPage === idx + 1
+                        ? 'bg-[#1a1a2e] text-[#FFD700]'
+                        : 'bg-white text-[#1a1a2e]'
+                        }`}
                     >
                       {idx + 1}
                     </button>
@@ -1422,7 +1409,7 @@ export default function App() {
         {/* =================== VIEW 2: ORGANIZER DASHBOARD =================== */}
         {activeTab === 'dashboard' && currentUser?.role === 'Organizer' && (
           <div className="space-y-8" id="dashboard-panel">
-            
+
             {/* Dashboard Header */}
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-4 border-b-4 border-[#1a1a2e]">
               <div>
@@ -1473,24 +1460,23 @@ export default function App() {
 
             {/* Charts Panel */}
             <div className="bg-white nb-border p-6 nb-shadow space-y-6">
-              
+
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b-3 border-[#1a1a2e] pb-4">
                 <div className="flex items-center space-x-2">
                   <BarChart3 className="h-5 w-5 text-[#FF6B9D]" />
                   <h4 className="text-sm font-black uppercase tracking-wider text-[#1a1a2e]">Sales & Occupancy Analytics</h4>
                 </div>
-                
+
                 {/* Range selector */}
                 <div className="flex items-center nb-border bg-[#FFFEF9] p-1">
                   {(['daily', 'monthly', 'yearly'] as const).map((range) => (
                     <button
                       key={range}
                       onClick={() => setStatsRange(range)}
-                      className={`px-4 py-1.5 text-[10px] font-black uppercase tracking-wider transition-all ${
-                        statsRange === range 
-                          ? 'bg-[#FFD700] text-[#1a1a2e] nb-shadow-sm' 
-                          : 'text-gray-500 hover:text-gray-700'
-                      }`}
+                      className={`px-4 py-1.5 text-[10px] font-black uppercase tracking-wider transition-all ${statsRange === range
+                        ? 'bg-[#FFD700] text-[#1a1a2e] nb-shadow-sm'
+                        : 'text-gray-500 hover:text-gray-700'
+                        }`}
                     >
                       {range}
                     </button>
@@ -1512,8 +1498,8 @@ export default function App() {
                         >
                           <defs>
                             <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#FFD700" stopOpacity={0.4}/>
-                              <stop offset="95%" stopColor="#FFD700" stopOpacity={0}/>
+                              <stop offset="5%" stopColor="#FFD700" stopOpacity={0.4} />
+                              <stop offset="95%" stopColor="#FFD700" stopOpacity={0} />
                             </linearGradient>
                           </defs>
                           <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
@@ -1579,20 +1565,19 @@ export default function App() {
                         <td className="py-3 px-4 font-medium">{ev.date}</td>
                         <td className="py-3 px-4 text-right font-bold">{ev.price === 0 ? 'FREE' : formatRupiah(ev.price)}</td>
                         <td className="py-3 px-4 text-center">
-                          <span className={`px-2 py-0.5 border-2 border-[#1a1a2e] text-[10px] font-mono font-black ${
-                            ev.availableSeats === 0 ? 'bg-[#FF4757] text-white' : 'bg-[#7CFC00] text-[#1a1a2e]'
-                          }`}>
+                          <span className={`px-2 py-0.5 border-2 border-[#1a1a2e] text-[10px] font-mono font-black ${ev.availableSeats === 0 ? 'bg-[#FF4757] text-white' : 'bg-[#7CFC00] text-[#1a1a2e]'
+                            }`}>
                             {ev.availableSeats} / {ev.capacity}
                           </span>
                         </td>
                         <td className="py-3 px-4 text-right space-x-2">
-                          <button 
+                          <button
                             onClick={(e: any) => openEditModal(ev, e)}
                             className="text-[11px] font-black text-[#00D4FF] hover:text-[#FF6B9D] uppercase transition-colors"
                           >
                             ✏️ Edit
                           </button>
-                          <button 
+                          <button
                             onClick={(e: any) => handleDeleteEvent(ev.id, ev.name, e)}
                             className="text-[11px] font-black text-[#FF4757] hover:text-[#1a1a2e] uppercase transition-colors"
                           >
@@ -1627,7 +1612,6 @@ export default function App() {
             </div>
             <div className="text-left">
               <span className="font-black text-lg text-[#FFD700]">EVENT KUY</span>
-              <p className="text-[10px] font-mono text-gray-400 uppercase tracking-widest">Neo-Brutal Platform</p>
             </div>
           </div>
           <div className="flex items-center space-x-4">
@@ -1647,9 +1631,9 @@ export default function App() {
           <div className="bg-white nb-border-thick max-w-md w-full shadow-2xl relative nb-shadow-lg animate-bounce-in overflow-hidden">
             {/* Colored header bar */}
             <div className="h-3 bg-[#FF6B9D]" />
-            
+
             <div className="p-6">
-              <button 
+              <button
                 onClick={() => {
                   setIsAuthOpen(false);
                   resetAuthFields();
@@ -1720,22 +1704,20 @@ export default function App() {
                         <button
                           type="button"
                           onClick={() => setAuthRole('Customer')}
-                          className={`nb-btn py-2.5 text-xs ${
-                            authRole === 'Customer' 
-                              ? 'bg-[#7CFC00] text-[#1a1a2e]' 
-                              : 'bg-white text-gray-500'
-                          }`}
+                          className={`nb-btn py-2.5 text-xs ${authRole === 'Customer'
+                            ? 'bg-[#7CFC00] text-[#1a1a2e]'
+                            : 'bg-white text-gray-500'
+                            }`}
                         >
                           🎭 Attendee
                         </button>
                         <button
                           type="button"
                           onClick={() => setAuthRole('Organizer')}
-                          className={`nb-btn py-2.5 text-xs ${
-                            authRole === 'Organizer' 
-                              ? 'bg-[#00D4FF] text-[#1a1a2e]' 
-                              : 'bg-white text-gray-500'
-                          }`}
+                          className={`nb-btn py-2.5 text-xs ${authRole === 'Organizer'
+                            ? 'bg-[#00D4FF] text-[#1a1a2e]'
+                            : 'bg-white text-gray-500'
+                            }`}
                         >
                           🎯 Organizer
                         </button>
@@ -1792,7 +1774,7 @@ export default function App() {
           <div className="bg-white nb-border-thick max-w-lg w-full shadow-2xl relative max-h-[90vh] overflow-y-auto nb-shadow-lg animate-bounce-in">
             {/* Colored header */}
             <div className="h-3 bg-[#7CFC00]" />
-            
+
             <div className="p-6">
               <button onClick={() => setIsModalOpen(false)} className="absolute top-6 right-5 nb-btn p-1 bg-white border-2 hover:bg-[#FF4757] hover:text-white transition-colors">
                 <X className="h-4 w-4" />
@@ -1980,7 +1962,7 @@ export default function App() {
       {isDetailsOpen && selectedEvent && (
         <div className="fixed inset-0 nb-overlay z-50 flex items-center justify-center p-4">
           <div className="bg-white nb-border-thick max-w-3xl w-full shadow-2xl relative max-h-[95vh] overflow-y-auto grid grid-cols-1 md:grid-cols-12 gap-0 nb-shadow-xl animate-bounce-in">
-            
+
             {/* Close */}
             <button onClick={() => setIsDetailsOpen(false)} className="absolute top-4 right-4 nb-btn p-1.5 bg-white border-2 z-10 hover:bg-[#FF4757] hover:text-white transition-colors">
               <X className="h-4 w-4" />
@@ -1988,7 +1970,7 @@ export default function App() {
 
             {/* Left Column: Details & Reviews */}
             <div className="md:col-span-7 p-6 space-y-5">
-              
+
               {/* Colored accent */}
               <div className="h-2 -mx-6 -mt-6 mb-4 bg-[#FF6B9D]" />
 
@@ -2030,7 +2012,7 @@ export default function App() {
                     <Star className="h-3.5 w-3.5 text-[#FFD700] fill-[#FFD700]" />
                     <span>Reviews & Feedback</span>
                   </span>
-                  
+
                   {reviewsStats.totalReviews > 0 && (
                     <span className="text-xs font-black text-[#1a1a2e] bg-[#FFD700] nb-border border-2 px-2 py-0.5">
                       ⭐ {reviewsStats.averageRating} / 5 ({reviewsStats.totalReviews})
@@ -2111,10 +2093,10 @@ export default function App() {
 
             {/* Right Column: Checkout */}
             <div className="md:col-span-5 bg-[#1a1a2e] border-l-4 border-[#FFD700] p-5 space-y-5 flex flex-col justify-between">
-              
+
               <div className="space-y-4">
                 <span className="text-[10px] uppercase tracking-widest font-black text-[#FFD700] block border-b-2 border-[#FFD700]/30 pb-2">🎟️ Ticket Checkout</span>
-                
+
                 {/* Price display */}
                 <div className="bg-[#FFD700] p-4 nb-border border-2 space-y-1">
                   <span className="text-[9px] uppercase tracking-wider font-black text-[#1a1a2e]">Standard Price</span>
@@ -2164,7 +2146,7 @@ export default function App() {
                           />
                           <span className="text-xs font-black text-white">💰 Redeem Points</span>
                         </label>
-                        
+
                         {redeemPoints && (
                           <div className="space-y-1 pl-6">
                             <div className="flex items-center space-x-2">
@@ -2221,11 +2203,10 @@ export default function App() {
               <button
                 onClick={handleBookTicket}
                 disabled={isBooking || selectedEvent.availableSeats <= 0}
-                className={`w-full py-3.5 nb-btn text-sm ${
-                  selectedEvent.availableSeats <= 0 
-                    ? 'bg-gray-600 text-gray-400 cursor-not-allowed border-gray-500' 
-                    : 'bg-[#FFD700] text-[#1a1a2e] animate-pulse-glow'
-                }`}
+                className={`w-full py-3.5 nb-btn text-sm ${selectedEvent.availableSeats <= 0
+                  ? 'bg-gray-600 text-gray-400 cursor-not-allowed border-gray-500'
+                  : 'bg-[#FFD700] text-[#1a1a2e] animate-pulse-glow'
+                  }`}
               >
                 {isBooking ? '⏳ Processing...' : selectedEvent.availableSeats <= 0 ? '🚫 SOLD OUT' : '🎫 Confirm & Purchase Ticket'}
               </button>
@@ -2235,6 +2216,21 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {isChatOpen && (
+        <div className="chatbot-dock">
+          <EventChat onClose={() => setIsChatOpen(false)} />
+        </div>
+      )}
+      <button
+        id="event-chat-launcher"
+        onClick={() => setIsChatOpen((open) => !open)}
+        className="chatbot-launcher"
+        aria-label={isChatOpen ? 'Tutup asisten Event Kuy' : 'Buka asisten Event Kuy'}
+      >
+        <Sparkles className="h-5 w-5" />
+        <span>Event Assistant</span>
+      </button>
 
     </div>
   );
