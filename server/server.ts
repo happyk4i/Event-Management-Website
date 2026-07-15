@@ -1,6 +1,7 @@
 import express from 'express';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
+import { dashboardRouter } from './routes/dashboard.js';
 
 async function startServer() {
   const app = express();
@@ -21,6 +22,7 @@ async function startServer() {
   // Authentication REST endpoints
   const { authRouter } = await import('./routes/auth.js');
   app.use('/api/auth', authRouter);
+  app.use('/api/dashboard', dashboardRouter);
 
   // Transactions & Promotions endpoints
   const { transactionsRouter } = await import('./routes/transactions.js');

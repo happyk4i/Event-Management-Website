@@ -1,5 +1,8 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '../db.js';
+import bcrypt from 'bcrypt'; 
+import jwt from 'jsonwebtoken'; 
+import { verifyToken } from '../auth.middleware.js';
 
 export const authRouter = Router();
 
@@ -35,6 +38,9 @@ authRouter.post('/register', async (req: Request, res: Response) => {
       return;
     }
 
+    // ENKRIPSI PASSWORD SEBELUM MASUK DATABASE
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     // Generate unique referral code
     let referralCode = '';
     let isCodeUnique = false;
@@ -49,7 +55,6 @@ authRouter.post('/register', async (req: Request, res: Response) => {
 
     // Process Referral Code if provided
     let referrerId: string | null = null;
-    let referrerName = '';
     let hasValidReferral = false;
 
     if (referredBy && referredBy.trim()) {
@@ -59,7 +64,6 @@ authRouter.post('/register', async (req: Request, res: Response) => {
 
       if (referrer) {
         referrerId = referrer.id;
-        referrerName = referrer.name;
         hasValidReferral = true;
       } else {
         res.status(400).json({ error: 'Invalid referral code provided.' });
@@ -67,65 +71,62 @@ authRouter.post('/register', async (req: Request, res: Response) => {
       }
     }
 
-    // Create User
-    const newUser = await prisma.user.create({
-      data: {
-        name: name.trim(),
-        email: email.toLowerCase().trim(),
-        password, // In-memory/plain text for simplified preview and reliability
-        role,
-        referralCode,
-        pointsBalance: 0
-      }
-    });
-
-    // If registered with valid referral:
-    if (hasValidReferral && referrerId) {
-      // 1. Give referrer 10,000 points expiring in 3 months
-      const expiryDate = getThreeMonthsFromNow();
-      await prisma.pointRecord.create({
+    // Jalankan transaksi database (Prisma Transaction) agar seluruh proses berjalan bersamaan
+    const result = await prisma.$transaction(async (tx) => {
+      const newUser = await tx.user.create({
         data: {
-          userId: referrerId,
-          amount: 10000,
-          source: `Referral Signup of ${newUser.name}`,
-          expiryDate,
-          isUsed: false
+          name: name.trim(),
+          email: email.toLowerCase().trim(),
+          password: hashedPassword, // Gunakan password yang sudah di-hash
+          role,
+          referralCode,
+          pointsBalance: 0
         }
       });
 
-      // Update referrer's pointsBalance
-      await prisma.user.update({
-        where: { id: referrerId },
-        data: {
-          pointsBalance: {
-            increment: 10000
+      if (hasValidReferral && referrerId) {
+        const expiryDate = getThreeMonthsFromNow();
+        
+        await tx.pointRecord.create({
+          data: {
+            userId: referrerId,
+            amount: 10000,
+            source: `Referral Signup of ${newUser.name}`,
+            expiryDate,
+            isUsed: false
           }
-        }
-      });
+        });
 
-      // 2. Give new user a 10% discount coupon expiring in 3 months
-      const couponCode = `WELCOME-${newUser.name.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4)}-${Math.floor(10 + Math.random() * 90)}`;
-      await prisma.coupon.create({
-        data: {
-          userId: newUser.id,
-          code: couponCode,
-          discount: 0.10, // 10% discount
-          expiryDate,
-          isUsed: false
-        }
-      });
-    }
+        await tx.user.update({
+          where: { id: referrerId },
+          data: { pointsBalance: { increment: 10000 } }
+        });
+
+        const couponCode = `WELCOME-${newUser.name.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4)}-${Math.floor(10 + Math.random() * 90)}`;
+        await tx.coupon.create({
+          data: {
+            userId: newUser.id,
+            code: couponCode,
+            discount: 0.10,
+            expiryDate,
+            isUsed: false
+          }
+        });
+      }
+
+      return newUser;
+    });
 
     res.status(201).json({
       success: true,
       message: 'User registered successfully!',
       user: {
-        id: newUser.id,
-        name: newUser.name,
-        email: newUser.email,
-        role: newUser.role,
-        referralCode: newUser.referralCode,
-        pointsBalance: newUser.pointsBalance
+        id: result.id,
+        name: result.name,
+        email: result.email,
+        role: result.role,
+        referralCode: result.referralCode,
+        pointsBalance: result.pointsBalance
       }
     });
   } catch (error: any) {
@@ -148,7 +149,8 @@ authRouter.post('/login', async (req: Request, res: Response) => {
       where: { email: email.toLowerCase().trim() }
     });
 
-    if (!user || user.password !== password) {
+    // COCOKKAN SANDI MENGGUNAKAN BCRYPT COMPARE
+    if (!user || !(await bcrypt.compare(password, user.password))) {
       res.status(401).json({ error: 'Invalid email or password combination.' });
       return;
     }
@@ -156,7 +158,6 @@ authRouter.post('/login', async (req: Request, res: Response) => {
     // Refresh and clean up expired points and coupons before returning balance
     const todayStr = new Date().toISOString().split('T')[0];
 
-    // Get active (not expired, not used) points
     const activePoints = await prisma.pointRecord.findMany({
       where: {
         userId: user.id,
@@ -167,14 +168,22 @@ authRouter.post('/login', async (req: Request, res: Response) => {
 
     const activePointsSum = activePoints.reduce((sum: any, record: { amount: any; }) => sum + record.amount, 0);
 
-    // Sync points balance in user record
     const updatedUser = await prisma.user.update({
       where: { id: user.id },
       data: { pointsBalance: activePointsSum }
     });
 
+    // TERBITKAN TOKEN JWT KEAMANAN UNTUK MIDDLEWARE
+    const jwtSecret = process.env.JWT_SECRET || 'fallback_secret_key';
+    const token = jwt.sign(
+      { id: updatedUser.id, role: updatedUser.role },
+      jwtSecret,
+      { expiresIn: '1d' } // Berlaku 1 hari
+    );
+
     res.json({
       success: true,
+      token, // <- Token wajib dikembalikan ke Frontend browser
       user: {
         id: updatedUser.id,
         name: updatedUser.name,
@@ -191,9 +200,15 @@ authRouter.post('/login', async (req: Request, res: Response) => {
 });
 
 // Get User Profile with Coupons and Points Details
-authRouter.get('/profile/:userId', async (req: Request, res: Response) => {
+authRouter.get('/profile/:userId', verifyToken, async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
+
+    if (req.user?.id !== userId) {
+      res.status(403).json({ error: 'Akses ditolak. Anda hanya diizinkan melihat profil sendiri.' });
+      return;
+    }
+
     const user = await prisma.user.findUnique({
       where: { id: userId }
     });
@@ -203,23 +218,18 @@ authRouter.get('/profile/:userId', async (req: Request, res: Response) => {
       return;
     }
 
-    // Use a Date at midnight for comparisons
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
 
-    // Fetch active points records
     const pointRecords = await prisma.pointRecord.findMany({
       where: { userId }
     });
 
-    // Check which ones are valid vs expired
     const activePoints = pointRecords.filter((r: typeof pointRecords[number]) => {
-      // expiryDate is stored as a string
       return !r.isUsed && new Date(r.expiryDate) >= todayStart;
     });
     const activePointsSum = activePoints.reduce((sum: number, r: { amount: number }) => sum + r.amount, 0);
 
-    // Sync point record balance
     if (activePointsSum !== user.pointsBalance) {
       await prisma.user.update({
         where: { id: userId },
@@ -228,12 +238,10 @@ authRouter.get('/profile/:userId', async (req: Request, res: Response) => {
       user.pointsBalance = activePointsSum;
     }
 
-    // Fetch coupons (unexpired and unused)
     const coupons = await prisma.coupon.findMany({
       where: {
         userId,
         isUsed: false,
-        // compare string date format
         expiryDate: { gte: todayStart.toISOString().split('T')[0] }
       }
     });
