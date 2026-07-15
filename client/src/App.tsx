@@ -1,20 +1,81 @@
 import React, { useState, useEffect, Suspense } from 'react';
+import {
+  Plus,
+  Search,
+  Edit,
+  Trash2,
+  Database,
+  Sparkles,
+  Calendar,
+  MapPin,
+  Users,
+  AlertCircle,
+  X,
+  Check,
+  Loader2,
+  RefreshCw,
+  Tag,
+  DollarSign,
+  Ticket,
+  Grid,
+  List,
+  Flame,
+  Info,
+  TrendingUp,
+  SlidersHorizontal,
+  Bookmark,
+  CalendarDays,
+  ArrowRight,
+  ShieldAlert,
+  HelpCircle,
+  Laptop,
+  Palette,
+  Coffee,
+  Trophy,
+  BookOpen,
+  Layers,
+  Music,
+  User,
+  LogOut,
+  Gift,
+  Star,
+  Clock,
+  ChevronLeft,
+  ChevronRight,
+  TrendingDown,
+  BarChart3,
+  CalendarCheck,
+  Zap,
+  Crown
+} from 'lucide-react';
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend
+} from 'recharts';
 import { Event, CATEGORIES, STATUSES, User as UserType, Transaction, Review, Coupon, PointRecord } from './types.js';
-import ToastNotification from './components/ToastNotification.js';
-import TopMarquee from './components/TopMarquee.js';
-import MainNavigation from './components/MainNavigation.js';
-import HeroSection from './components/HeroSection.js';
-import ExpirationsWarning from './components/ExpirationsWarning.js';
-import CustomerRewardsPanel from './components/CustomerRewardsPanel.js';
-import EventFilters from './components/EventFilters.js';
-import EventCatalog from './components/EventCatalog.js';
-import Pagination from './components/Pagination.js';
-import OrganizerDashboard from './components/OrganizerDashboard.js';
-import Footer from './components/Footer.js';
-import AuthModal from './components/AuthModal.js';
-import EventFormModal from './components/EventFormModal.js';
-import EventDetailsModal from './components/EventDetailsModal.js';
-import EventAssistantDock from './components/EventAssistantDock.js';
+import ToastNotification from './component/ToastNotification.js';
+import TopMarquee from './component/TopMarquee.js';
+import MainNavigation from './component/MainNavigation.js';
+import HeroSection from './component/HeroSection.js';
+import ExpirationsWarning from './component/ExpirationsWarning.js';
+import CustomerRewardsPanel from './component/CustomerRewardsPanel.js';
+import EventFilters from './component/EventFilters.js';
+import EventCatalog from './component/EventCatalog.js';
+import Pagination from './component/Pagination.js';
+import OrganizerDashboard from './component/OrganizerDashboard.js';
+import Footer from './component/Footer.js';
+import AuthModal from './component/AuthModal.js';
+import EventFormModal from './component/EventFormModal.js';
+import EventDetailsModal from './component/EventDetailsModal.js';
+import EventAssistantDock from './component/EventAssistantDock.js';
 
 export default function App() {
   // Authentication & Session State
