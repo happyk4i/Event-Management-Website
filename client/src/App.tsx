@@ -15,19 +15,13 @@ import {
   Loader2, 
   RefreshCw,
   Tag,
-  DollarSign,
   Ticket,
   Grid,
   List,
   Flame,
-  Info,
   TrendingUp,
-  SlidersHorizontal,
-  Bookmark,
   CalendarDays,
-  ArrowRight,
   ShieldAlert,
-  HelpCircle,
   Laptop,
   Palette,
   Coffee,
@@ -39,12 +33,9 @@ import {
   LogOut,
   Gift,
   Star,
-  Clock,
   ChevronLeft,
   ChevronRight,
-  TrendingDown,
   BarChart3,
-  CalendarCheck,
   Zap,
   Crown
 } from 'lucide-react';
@@ -57,8 +48,7 @@ import {
   XAxis, 
   YAxis, 
   CartesianGrid, 
-  Tooltip, 
-  Legend 
+  Tooltip
 } from 'recharts';
 import { Event, CATEGORIES, STATUSES, User as UserType, Transaction, Review, Coupon, PointRecord } from './types.js';
 

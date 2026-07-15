@@ -1,82 +1,96 @@
-datasource db {
-  provider = "postgresql"
-}
-
 generator client {
   provider = "prisma-client-js"
 }
 
+datasource db {
+  provider = "postgresql"
+}
+
 model User {
-  id            String   @id @default(uuid())
+  id            String        @id @default(uuid())
   name          String
-  email         String   @unique
+  email         String        @unique
   password      String
-  role          String   // "Customer" or "Organizer"
-  referralCode  String   @unique
-  pointsBalance Int      @default(0)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  role          String
+  referralCode  String        @unique
+  pointsBalance Int           @default(0)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  Coupon        Coupon[]
+  Event         Event[]
+  PointRecord   PointRecord[]
+  Review        Review[]
+  Transaction   Transaction[]
 }
 
 model Event {
-  id             String   @id @default(uuid())
+  id             String        @id @default(uuid())
   name           String
-  description    String   @default("")
-  code           String   @unique // Unique event code, like SKU (e.g. MUSIC-JKT-001)
-  category       String   // e.g. Music, Tech, Arts, Workshop
-  price          Float    // Ticket price (IDR)
-  capacity       Int      // Total ticket capacity
-  availableSeats Int      // Remaining seats
-  date           String   // Date of the event (YYYY-MM-DD)
-  time           String   @default("19:00") // Time of the event
-  location       String   // Venue / City
-  status         String   // Active, Draft, Sold Out, Archived
-  organizerId    String?  // Optional relation identifier
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  description    String        @default("")
+  code           String        @unique
+  category       String
+  price          Float
+  capacity       Int
+  availableSeats Int
+  date           String
+  time           String        @default("19:00")
+  location       String
+  status         String
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  organizerId    String?
+  User           User?         @relation(fields: [organizerId], references: [id])
+  Review         Review[]
+  transactions   Transaction[]
 }
 
 model Transaction {
   id              String   @id @default(uuid())
-  eventId         String
-  eventName       String
-  buyerId         String
-  buyerName       String
   originalPrice   Float
   discountApplied Float
   finalPrice      Float
   pointsUsed      Int      @default(0)
   couponUsed      Boolean  @default(false)
-  purchaseDate    String   // Date string (YYYY-MM-DD)
+  purchaseDate    String
   createdAt       DateTime @default(now())
+  eventName       String
+  buyerName       String
+  eventId         String
+  buyerId         String
+  User            User     @relation(fields: [buyerId], references: [id])
+  event           Event    @relation(fields: [eventId], references: [id])
 }
 
 model Review {
   id        String   @id @default(uuid())
-  eventId   String
-  userId    String
   userName  String
-  rating    Int      // 1 to 5
+  rating    Int
   feedback  String
   createdAt DateTime @default(now())
+  eventId   String
+  userId    String
+  Event     Event    @relation(fields: [eventId], references: [id])
+  User      User     @relation(fields: [userId], references: [id])
 }
 
 model PointRecord {
   id         String   @id @default(uuid())
-  userId     String
   amount     Int
-  source     String   // e.g., "Referral Signup from User B"
-  expiryDate String   // YYYY-MM-DD
+  source     String
+  expiryDate String
   isUsed     Boolean  @default(false)
   createdAt  DateTime @default(now())
+  userId     String
+  User       User     @relation(fields: [userId], references: [id])
 }
 
 model Coupon {
   id         String   @id @default(uuid())
-  userId     String
   code       String
-  discount   Float    // e.g. 0.10 for 10%
-  expiryDate String   // YYYY-MM-DD
+  discount   Float
+  expiryDate String
   isUsed     Boolean  @default(false)
   createdAt  DateTime @default(now())
+  userId     String
+  User       User     @relation(fields: [userId], references: [id])
 }
