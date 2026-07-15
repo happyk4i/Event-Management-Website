@@ -873,7 +873,9 @@ export default function App() {
       />
 
       {/* =================== EVENT ASSISTANT DOCK =================== */}
-      <EventAssistantDock isChatOpen={isChatOpen} setIsChatOpen={setIsChatOpen} />
+      {currentUser && (
+        <EventAssistantDock isChatOpen={isChatOpen} setIsChatOpen={setIsChatOpen} />
+      )}
 
     </div>
   );

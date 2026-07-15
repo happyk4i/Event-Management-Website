@@ -50,6 +50,45 @@ chatRouter.post('/', async (req: Request, res: Response) => {
       return;
     }
 
+    // Call Activepieces automation webhook
+    const activepiecesWebhookUrl = 'https://cloud.activepieces.com/api/v1/webhooks/wwJvcE9OLekCzbpBIvbEt';
+    try {
+      const response = await fetch(activepiecesWebhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: latestUserMessage.content,
+          messages: cleanMessages
+        })
+      });
+
+      if (response.ok) {
+        const text = await response.text();
+        let message = text;
+        let activepiecesEvents: ChatEvent[] = [];
+
+        try {
+          const data = JSON.parse(text);
+          if (data && typeof data === 'object') {
+            message = data.message || data.text || data.content || data.response || text;
+            if (Array.isArray(data.events)) {
+              activepiecesEvents = data.events;
+            }
+          }
+        } catch (e) {
+          // If response is not JSON, it's fine, we treat the raw text as the message.
+        }
+
+        res.json({ message, events: activepiecesEvents });
+        return;
+      } else {
+        console.warn(`[Chat] Activepieces webhook returned status ${response.status}. Falling back to local AI agent.`);
+      }
+    } catch (err) {
+      console.warn('[Chat] Activepieces webhook call failed. Falling back to local AI agent:', err);
+    }
+
+    // Local fallback
     const events = await findChatEvents(latestUserMessage.content);
     const result = await generateText({
       model: openrouter(process.env.OPENROUTER_MODEL || 'openai/gpt-4o-mini'),
