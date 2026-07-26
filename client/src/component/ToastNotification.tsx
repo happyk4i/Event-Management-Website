@@ -13,7 +13,7 @@ export default function ToastNotification({ toast, onClose }: { toast: ToastType
     >
       <div className="flex items-center space-x-2">
         <span className={`text-base ${toast.type === 'success' ? '' : 'text-white'}`}>
-          {toast.type === 'success' ? '✅' : '⚠️'}
+          {toast.type === 'success' ? '' : '️'}
         </span>
         <span className="text-sm font-bold mt-0.5">{toast.message}</span>
       </div>

@@ -48,9 +48,9 @@ export default function AuthModal({
           </button>
 
           <div className="text-center mb-6">
-            <span className="inline-block bg-[#FFD700] nb-border border-2 px-3 py-1 text-[10px] font-black uppercase tracking-widest mb-3">🎫 Event Kuy</span>
+            <span className="inline-block bg-[#FFD700] nb-border border-2 px-3 py-1 text-[10px] font-black uppercase tracking-widest mb-3">Event Kuy</span>
             <h3 className="text-2xl font-black text-[#1a1a2e]">
-              {authMode === 'login' ? '👋 Welcome Back!' : '🚀 Join Now!'}
+              {authMode === 'login' ? 'Welcome Back!' : 'Join Now!'}
             </h3>
           </div>
 
@@ -110,14 +110,14 @@ export default function AuthModal({
                       onClick={() => setAuthRole('Customer')}
                       className={`nb-btn py-2.5 text-xs ${authRole === 'Customer' ? 'bg-[#7CFC00] text-[#1a1a2e]' : 'bg-white text-gray-500'}`}
                     >
-                      🎭 Attendee
+                      Attendee
                     </button>
                     <button
                       type="button"
                       onClick={() => setAuthRole('Organizer')}
                       className={`nb-btn py-2.5 text-xs ${authRole === 'Organizer' ? 'bg-[#00D4FF] text-[#1a1a2e]' : 'bg-white text-gray-500'}`}
                     >
-                      🎯 Organizer
+                      Organizer
                     </button>
                   </div>
                 </div>
@@ -131,7 +131,7 @@ export default function AuthModal({
                     onChange={(e) => setAuthReferredBy(e.target.value)}
                     className="nb-input w-full"
                   />
-                  <span className="text-[9px] text-gray-400 mt-1 block font-bold">🎁 Get a 10% welcome coupon valid for 3 months!</span>
+                  <span className="text-[9px] text-gray-400 mt-1 block font-bold">Get a 10% welcome coupon valid for 3 months!</span>
                 </div>
               </>
             )}
@@ -140,7 +140,7 @@ export default function AuthModal({
               type="submit"
               className="nb-btn w-full py-3 bg-[#1a1a2e] text-[#FFD700] text-sm mt-4"
             >
-              {authMode === 'login' ? '🔐 Sign In' : '🚀 Create Account'}
+              {authMode === 'login' ? 'Sign In' : 'Create Account'}
             </button>
           </form>
 

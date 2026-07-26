@@ -59,7 +59,7 @@ export default function EventFormModal({
           <div className="mb-5 pb-3 border-b-3 border-[#1a1a2e]">
             <span className="inline-block bg-[#7CFC00] nb-border border-2 px-3 py-1 text-[9px] font-black uppercase tracking-widest mb-2">🛠️ Organizer Tool</span>
             <h3 className="text-xl font-black text-[#1a1a2e]">
-              {modalMode === 'create' ? '📝 Publish New Event' : '✏️ Edit Event Details'}
+              {modalMode === 'create' ? '📝 Publish New Event' : '️ Edit Event Details'}
             </h3>
           </div>
 

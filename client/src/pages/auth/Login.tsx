@@ -52,13 +52,13 @@ const Login: React.FC<LoginPageProps> = ({ onLoginSuccess, onNavigateToRegister 
           <span className="bg-yellow-400 px-3 py-1 text-sm font-black border-2 border-black inline-block shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
             EVENT KUY
           </span>
-          <h2 className="mt-4 text-3xl font-black">👋 Welcome Back!</h2>
+          <h2 className="mt-4 text-3xl font-black">Welcome Back!</h2>
           <p className="text-gray-600 text-sm mt-1">Silakan masuk ke akun Anda</p>
         </div>
 
         {error && (
           <div className="mb-4 border-2 border-black bg-red-100 p-3 text-sm font-bold text-red-700 flex items-center gap-2">
-            <span>⚠</span> {error}
+            <span></span> {error}
           </div>
         )}
 

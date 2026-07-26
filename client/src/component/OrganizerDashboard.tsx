@@ -159,7 +159,7 @@ export default function OrganizerDashboard({
                     </span>
                   </td>
                   <td className="py-3 px-4 text-right space-x-2">
-                    <button onClick={(e) => openEditModal(ev, e)} className="text-[11px] font-black text-[#00D4FF] hover:text-[#FF6B9D] uppercase transition-colors">✏️ Edit</button>
+                    <button onClick={(e) => openEditModal(ev, e)} className="text-[11px] font-black text-[#00D4FF] hover:text-[#FF6B9D] uppercase transition-colors">️ Edit</button>
                     <button onClick={(e) => handleDeleteEvent(ev.id, ev.name, e)} className="text-[11px] font-black text-[#FF4757] hover:text-[#1a1a2e] uppercase transition-colors">🗑️ Remove</button>
                   </td>
                 </tr>

@@ -23,6 +23,7 @@
     "@types/three": "^0.185.1",
     "@vitejs/plugin-react": "^5.2.0",
     "ai": "^7.0.28",
+    "bcrypt": "^6.0.0",
     "dotenv": "^17.4.2",
     "express": "^4.22.2",
     "gsap": "^3.15.0",

@@ -33,7 +33,7 @@ export default function ExpirationsWarning({ userProfile }: ExpirationsWarningPr
     <div className="bg-[#FFD700] nb-border p-4 mb-4 text-xs text-[#1a1a2e] flex items-start space-x-3 nb-shadow-sm animate-shake-hover">
       <AlertCircle className="h-5 w-5 mt-0.5 shrink-0" />
       <div className="space-y-1">
-        <p className="font-black uppercase tracking-wider text-[11px]">⚡ EXPIRATION ALERT!</p>
+        <p className="font-black uppercase tracking-wider text-[11px]"> EXPIRATION ALERT!</p>
         {closeToExpirePoints.map((p: { id: any; amount: number; expiryDate: any; }) => (
           <p key={p.id}>• {p.amount} reward points expire on <strong>{p.expiryDate}</strong></p>
         ))}

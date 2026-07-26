@@ -122,7 +122,7 @@ export default function EventCatalog({
                 </span>
                 {currentUser && currentUser.role === 'Organizer' && currentUser.id === ev.organizerId && (
                   <div className="flex items-center space-x-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={(e) => onOpenEdit(ev, e)} className="nb-btn p-1.5 bg-[#00D4FF] text-[#1a1a2e] border-2" title="Edit Event">✏️</button>
+                    <button onClick={(e) => onOpenEdit(ev, e)} className="nb-btn p-1.5 bg-[#00D4FF] text-[#1a1a2e] border-2" title="Edit Event">️</button>
                     <button onClick={(e) => onDeleteEvent(ev.id, ev.name, e)} className="nb-btn p-1.5 bg-[#FF4757] text-white border-2" title="Delete Event">🗑️</button>
                   </div>
                 )}

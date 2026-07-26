@@ -145,7 +145,7 @@ export default function EventDetailsModal({
             {hasPurchasedSelectedEvent() && (
               <form onSubmit={handleSubmitFeedback} className="bg-[#FFD700]/20 p-4 nb-border border-2 space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-black text-[#1a1a2e] uppercase">✍️ Write Review</span>
+                  <span className="text-[10px] font-black text-[#1a1a2e] uppercase">️ Write Review</span>
                   <div className="flex items-center space-x-1">
                     <span className="text-[10px] text-gray-400 font-bold">Rating:</span>
                     <div className="flex items-center">

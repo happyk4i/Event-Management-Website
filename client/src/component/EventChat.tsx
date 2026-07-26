@@ -48,7 +48,7 @@ export default function EventChat({ onClose }: { onClose?: () => void }) {
       </div>)}
       {loading && <div className="chatbot-message assistant"><div className="chatbot-bubble assistant"><span className="chatbot-avatar"><Sparkles size={14} /></span><Loader2 className="animate-spin" size={16} /><p>Mencari event yang cocok...</p></div></div>}
       {events.length > 0 && <div className="chatbot-event-grid">{events.map((event) => <article key={event.id} className="chatbot-event-card"><span>{event.category}</span><h3>{event.name}</h3><p><MapPin size={13} /> {event.location}</p><p><Calendar size={13} /> {new Date(event.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })} · {event.time}</p><strong>{rupiah(event.price)}</strong></article>)}</div>}
-      {error && <p className="chatbot-error">⚠ {error}</p>}<div ref={end} />
+      {error && <p className="chatbot-error"> {error}</p>}<div ref={end} />
     </div>
     {messages.length === 1 && <div className="chatbot-suggestions">{['Cari event musik di Jakarta', 'Food event di bawah 500 ribu', 'Saya ingin workshop'].map((prompt) => <button key={prompt} onClick={() => setInput(prompt)}>{prompt}</button>)}</div>}
     <form className="chatbot-input-area" onSubmit={send}><textarea value={input} onChange={(event) => setInput(event.target.value)} onKeyDown={keyDown} rows={1} maxLength={500} placeholder="Tulis event yang Kamu cari..." aria-label="Pesan untuk Event Kuy Assistant" /><button type="submit" disabled={!input.trim() || loading} aria-label="Kirim pesan"><Send size={18} /></button></form>

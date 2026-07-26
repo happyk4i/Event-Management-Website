@@ -34,7 +34,7 @@ export default function MainNavigation({ currentUser, activeTab, setActiveTab, s
                 : 'text-gray-500 hover:bg-gray-100'
                 }`}
             >
-              ⚡ Explore
+               Explore
             </button>
             {currentUser.role === 'Organizer' && (
               <button

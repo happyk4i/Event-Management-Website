@@ -8,12 +8,12 @@ export default function TopMarquee() {
         {[...Array(3)].map((_, i) => (
           <React.Fragment key={i}>
             <span className="flex items-center space-x-2"><Zap className="h-3.5 w-3.5" /><span>Indonesian Premium Event Platform</span></span>
-            <span>★</span>
+            <span></span>
             <span className="flex items-center space-x-2"><Ticket className="h-3.5 w-3.5" /><span>Secure Ticketing System</span></span>
-            <span>★</span>
+            <span></span>
             <span className="flex items-center space-x-2"><Crown className="h-3.5 w-3.5" /><span>Referral Rewards Active</span></span>
-            <span>★</span>
-            <span>★</span>
+            <span></span>
+            <span></span>
           </React.Fragment>
         ))}
       </div>

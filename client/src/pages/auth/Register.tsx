@@ -14,7 +14,7 @@ export const Register: React.FC<RegisterPageProps> = ({ onRegisterSuccess, onNav
   const [password, setPassword] = useState('');
   const [role, setAuthRole] = useState<'Customer' | 'Organizer'>('Customer');
   const [referredBy, setReferredBy] = useState('');
-  
+
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -56,13 +56,13 @@ export const Register: React.FC<RegisterPageProps> = ({ onRegisterSuccess, onNav
           <span className="bg-yellow-400 px-3 py-1 text-sm font-black border-2 border-black inline-block shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
             EVENT KUY
           </span>
-          <h2 className="mt-4 text-3xl font-black">🚀 Create Account</h2>
+          <h2 className="mt-4 text-3xl font-black">Create Account</h2>
           <p className="text-gray-600 text-sm mt-1">Gabung dan temukan event seru</p>
         </div>
 
         {error && (
           <div className="mb-4 border-2 border-black bg-red-100 p-3 text-sm font-bold text-red-700">
-            ⚠ {error}
+             {error}
           </div>
         )}
 
