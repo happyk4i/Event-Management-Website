@@ -9,7 +9,7 @@ export default function ExpirationsWarning({ userProfile }: ExpirationsWarningPr
   if (!userProfile) return null;
   const today = new Date();
 
-  // Check points records that will expire within the next 30 days
+
   const closeToExpirePoints = userProfile.pointRecords.filter((r: { isUsed: any; expiryDate: string | number | Date; }) => {
     if (r.isUsed) return false;
     const expDate = new Date(r.expiryDate);
@@ -18,7 +18,7 @@ export default function ExpirationsWarning({ userProfile }: ExpirationsWarningPr
     return diffDays > 0 && diffDays <= 30;
   });
 
-  // Check coupons that will expire within the next 30 days
+
   const closeToExpireCoupons = userProfile.coupons.filter((c: { isUsed: any; expiryDate: string | number | Date; }) => {
     if (c.isUsed) return false;
     const expDate = new Date(c.expiryDate);

@@ -4,18 +4,18 @@ import { verifyToken, authorizeRoles, AuthenticatedUser } from '../auth.middlewa
 
 export const dashboardRouter = Router();
 
-// Get organizer statistics
+
 dashboardRouter.get('/stats/:organizerId', verifyToken, authorizeRoles('Organizer'), async (req: Request, res: Response) => {
   try {
     const { organizerId } = req.params;
     const currentUser = (req as any).user as AuthenticatedUser | undefined;
 
-    // Security check: prevent unauthorized access
+
     if (currentUser?.id !== organizerId) {
       return res.status(403).json({ error: 'Access denied. You cannot view this dashboard.' });
     }
 
-    // Get all events created by this organizer
+
     const organizerEvents = await prisma.event.findMany({
       where: { createdById: organizerId },
       include: {
@@ -69,7 +69,7 @@ dashboardRouter.get('/stats/:organizerId', verifyToken, authorizeRoles('Organize
   }
 });
 
-// Get user bookings
+
 dashboardRouter.get('/bookings/:userId', verifyToken, async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
@@ -95,13 +95,13 @@ dashboardRouter.get('/bookings/:userId', verifyToken, async (req: Request, res: 
   }
 });
 
-// Get event bookings (for organizers)
+
 dashboardRouter.get('/event-bookings/:eventId', verifyToken, authorizeRoles('Organizer'), async (req: Request, res: Response) => {
   try {
     const { eventId } = req.params;
     const currentUser = (req as any).user as AuthenticatedUser | undefined;
 
-    // Verify event belongs to this organizer
+
     const event = await prisma.event.findUnique({
       where: { id: eventId },
       select: { createdById: true }

@@ -33,7 +33,7 @@ export default function AuthModal({
   return (
     <div className="fixed inset-0 nb-overlay z-50 flex items-center justify-center p-4">
       <div className="bg-white nb-border-thick max-w-md w-full shadow-2xl relative nb-shadow-lg animate-bounce-in overflow-hidden">
-        {/* Colored header bar */}
+        {}
         <div className="h-3 bg-[#FF6B9D]" />
 
         <div className="p-6">

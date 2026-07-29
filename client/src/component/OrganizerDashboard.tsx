@@ -23,7 +23,7 @@ export default function OrganizerDashboard({
 }: Props) {
   return (
     <div className="space-y-8" id="dashboard-panel">
-      {/* Dashboard Header */}
+      {}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-4 border-b-4 border-[#1a1a2e]">
         <div>
           <h2 className="text-3xl font-black text-[#1a1a2e]">📊 Management Suite</h2>
@@ -38,7 +38,7 @@ export default function OrganizerDashboard({
         </button>
       </div>
 
-      {/* Stats Cards */}
+      {}
       {dashboardStats ? (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
           <div className="bg-[#FFD700] nb-border-thick p-6 nb-shadow-lg nb-card-hover">
@@ -64,7 +64,7 @@ export default function OrganizerDashboard({
         </div>
       )}
 
-      {/* Charts Panel */}
+      {}
       <div className="bg-white nb-border p-6 nb-shadow space-y-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b-3 border-[#1a1a2e] pb-4">
           <div className="flex items-center space-x-2">
@@ -128,7 +128,7 @@ export default function OrganizerDashboard({
         )}
       </div>
 
-      {/* Organizer Events Table */}
+      {}
       <div className="bg-white nb-border p-6 nb-shadow space-y-4">
         <div className="flex items-center justify-between pb-3 border-b-3 border-[#1a1a2e]">
           <span className="text-sm font-black uppercase tracking-wider text-[#1a1a2e]">📋 Your Managed Events</span>

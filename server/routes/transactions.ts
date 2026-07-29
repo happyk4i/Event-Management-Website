@@ -4,7 +4,7 @@ import { verifyToken } from '../auth.middleware.js';
 
 export const transactionsRouter = Router();
 
-// Create new booking (transaction)
+
 transactionsRouter.post('/', verifyToken, async (req: Request, res: Response) => {
   const { eventId, buyerId, useCouponId, usePointsAmount } = req.body;
 
@@ -72,19 +72,28 @@ transactionsRouter.post('/', verifyToken, async (req: Request, res: Response) =>
         });
       }
 
-      // Create Booking with paymentPending status
+
+      await tx.event.update({
+        where: { id: eventId },
+        data: { availableSeats: { decrement: 1 } },
+      });
+
+
+      const isFree = finalPrice <= 0;
+
+
       const booking = await tx.booking.create({
         data: {
           eventId,
           userId: buyerId,
           totalPrice: finalPrice,
-          status: 'pending',
-          paymentStatus: 'pending',
+          status: isFree ? 'confirmed' : 'pending',
+          paymentStatus: isFree ? 'waived' : 'pending',
           appliedPoints: pointsDeducted || 0,
         },
       });
 
-      // Also create legacy transaction record
+
       await tx.transaction.create({
         data: {
           eventId,
@@ -95,15 +104,20 @@ transactionsRouter.post('/', verifyToken, async (req: Request, res: Response) =>
         },
       });
 
-      // Reward points (will be applied after payment verification)
-      return { booking, finalPrice };
+
+      if (isFree) {
+        const pointsEarned = Math.floor(Number(finalPrice) / 1000);
+
+      }
+
+      return { booking, finalPrice, isFree, pointsDeducted, couponDiscount: couponUsed ? couponUsed.discountAmount : 0 };
     });
 
     res.status(201).json({
-      message: 'Booking created. Please upload payment proof for verification.',
+      message: result.isFree ? 'Booking confirmed successfully!' : 'Booking created. Please upload payment proof for verification.',
       booking: result.booking,
       summary: {
-        originalAmount: result.finalPrice + (result.finalPrice > 0 ? 0 : 0),
+        originalAmount: result.finalPrice + result.pointsDeducted * 100 + result.couponDiscount,
         finalAmount: result.finalPrice,
       },
     });
@@ -112,7 +126,7 @@ transactionsRouter.post('/', verifyToken, async (req: Request, res: Response) =>
   }
 });
 
-// GET transactions. Customers may read only their own history; organizers and admins may read all.
+
 transactionsRouter.get('/', verifyToken, async (req: Request, res: Response) => {
   const requestedBuyerId = typeof req.query.buyerId === 'string' ? req.query.buyerId : undefined;
   const canReadAll = req.user?.role === 'Admin' || req.user?.role === 'Organizer';
@@ -138,7 +152,7 @@ transactionsRouter.get('/', verifyToken, async (req: Request, res: Response) => 
   }
 });
 
-// GET transaction by ID
+
 transactionsRouter.get('/:id', verifyToken, async (req: Request, res: Response) => {
   const { id } = req.params;
 

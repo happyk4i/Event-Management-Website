@@ -13,17 +13,14 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <BrowserRouter>
       <Routes>
-        {/* RUTE PUBLIK: Halaman utama penuh animasi dan menu login/register */}
+        {}
         <Route path="/" element={<App />} /> 
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-        {/* RUTE KHUSUS CUSTOMER (Fitur 1)
-        <Route element={<RouteGuard allowedRoles={['Customer']} />}>
-          <Route path="/buy-ticket" element={<TransactionPage />} />
-        </Route> */}
+        {}
 
-        {/* RUTE KHUSUS ORGANIZER */}
+        {}
         <Route element={<RouteGuard allowedRoles={['Organizer']} />}>
           <Route path="/dashboard" element={<DashboardStats />} />
         </Route>

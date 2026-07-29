@@ -6,7 +6,7 @@ import { verifyToken } from '../auth.middleware.js';
 
 export const authRouter = Router();
 
-// Generate unique referral code
+
 async function genRefCode(name: string): Promise<string> {
   let code = '';
   let ok = false;
@@ -20,7 +20,7 @@ async function genRefCode(name: string): Promise<string> {
   return code;
 }
 
-// Register
+
 authRouter.post('/register', async (req: Request, res: Response) => {
   try {
     const { name, email, password, role, referredBy } = req.body;
@@ -73,7 +73,7 @@ authRouter.post('/register', async (req: Request, res: Response) => {
   }
 });
 
-// Login
+
 authRouter.post('/login', async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
@@ -100,7 +100,7 @@ authRouter.post('/login', async (req: Request, res: Response) => {
   }
 });
 
-// Profile
+
 authRouter.get('/profile/:userId', verifyToken, async (req: Request, res: Response) => {
   const user = await prisma.user.findUnique({
     where: { id: req.params.userId },
@@ -110,7 +110,7 @@ authRouter.get('/profile/:userId', verifyToken, async (req: Request, res: Respon
   res.json(user);
 });
 
-// Referral stats
+
 authRouter.get('/referral-stats', verifyToken, async (req: Request, res: Response) => {
   const uid = req.user?.id;
   if (!uid) return res.status(401).json({ error: 'Unauthorized' });
@@ -129,7 +129,7 @@ authRouter.get('/referral-stats', verifyToken, async (req: Request, res: Respons
   });
 });
 
-// User bookings
+
 authRouter.get('/bookings', verifyToken, async (req: Request, res: Response) => {
   const uid = req.user?.id;
   if (!uid) return res.status(401).json({ error: 'Unauthorized' });
@@ -141,7 +141,7 @@ authRouter.get('/bookings', verifyToken, async (req: Request, res: Response) => 
   res.json(bookings);
 });
 
-// Points balance & history
+
 authRouter.get('/points', verifyToken, async (req: Request, res: Response) => {
   const uid = req.user?.id;
   if (!uid) return res.status(401).json({ error: 'Unauthorized' });
@@ -150,7 +150,7 @@ authRouter.get('/points', verifyToken, async (req: Request, res: Response) => {
   res.json({ balance: user?.pointsBalance || 0, history: records });
 });
 
-// Use points
+
 authRouter.post('/use-points', verifyToken, async (req: Request, res: Response) => {
   const uid = req.user?.id;
   const { points, bookingId } = req.body;

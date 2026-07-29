@@ -30,7 +30,7 @@ export default function EventFilters({
     <div className="bg-white nb-border p-5 nb-shadow space-y-4" id="filters-container">
       <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-4">
 
-        {/* Search Input */}
+        {}
         <div className="relative flex-1">
           <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
           <input
@@ -55,7 +55,7 @@ export default function EventFilters({
           )}
         </div>
 
-        {/* Category Filter */}
+        {}
         <div className="flex items-center gap-2">
           <span className="text-[10px] uppercase font-black tracking-widest text-[#1a1a2e] whitespace-nowrap">Category:</span>
           <select
@@ -73,7 +73,7 @@ export default function EventFilters({
           </select>
         </div>
 
-        {/* Location Filter */}
+        {}
         <div className="flex items-center gap-2">
           <span className="text-[10px] uppercase font-black tracking-widest text-[#1a1a2e] whitespace-nowrap">City:</span>
           <input
@@ -88,7 +88,7 @@ export default function EventFilters({
           />
         </div>
 
-        {/* Status Filter (Organizer only) */}
+        {}
         {currentUser?.role === 'Organizer' && (
           <div className="flex items-center gap-2">
             <span className="text-[10px] uppercase font-black tracking-widest text-[#1a1a2e] whitespace-nowrap">Status:</span>
@@ -108,7 +108,7 @@ export default function EventFilters({
           </div>
         )}
 
-        {/* View Mode Toggle */}
+        {}
         <div className="flex items-center nb-border bg-[#FFFEF9] p-1 self-start lg:self-auto">
           <button
             onClick={() => setViewMode('grid')}
@@ -120,7 +120,7 @@ export default function EventFilters({
         </div>
       </div>
 
-      {/* Debounce Indicator */}
+      {}
       {searchQuery !== debouncedSearchQuery && (
         <div className="text-[11px] font-mono font-bold text-[#FF6B9D] animate-pulse flex items-center space-x-2 pt-1">
           <RefreshCw className="h-3.5 w-3.5 animate-spin" />

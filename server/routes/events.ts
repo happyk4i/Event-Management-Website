@@ -4,10 +4,10 @@ import { verifyToken } from '../auth.middleware.js';
 
 export const eventsRouter = Router();
 
-// Helper function to format date to YYYY-MM-DD
+
 const formatDate = (date: Date) => date.toISOString().split('T')[0];
 
-// GET all events with filtering, search, location and pagination
+
 eventsRouter.get('/', async (req: Request, res: Response) => {
   try {
     const { search, category, status, location, page, limit } = req.query;
@@ -45,14 +45,14 @@ eventsRouter.get('/', async (req: Request, res: Response) => {
       orderBy: { date: 'asc' },
       skip,
       take: limitNum,
-      include: { ticketTypes: true } // Include ticket types for frontend
+      include: { ticketTypes: true }
     });
 
-    // Format date for each event
+
     const formattedEvents = events.map(event => ({
       ...event,
-      date: formatDate(event.date), // Format date here
-      // Ensure ticketType prices are numbers if stored as Decimal
+      date: formatDate(event.date),
+
       ticketTypes: event.ticketTypes.map(tt => ({
         ...tt,
         price: Number(tt.price)
@@ -72,7 +72,7 @@ eventsRouter.get('/', async (req: Request, res: Response) => {
   }
 });
 
-// GET single event
+
 eventsRouter.get('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -93,10 +93,10 @@ eventsRouter.get('/:id', async (req: Request, res: Response) => {
       return;
     }
 
-    // Format date for single event
+
     const formattedEvent = {
       ...event,
-      date: formatDate(event.date), // Format date here
+      date: formatDate(event.date),
       ticketTypes: event.ticketTypes.map(tt => ({
         ...tt,
         price: Number(tt.price)
@@ -110,7 +110,7 @@ eventsRouter.get('/:id', async (req: Request, res: Response) => {
   }
 });
 
-// POST create event
+
 eventsRouter.post('/', verifyToken, async (req: Request, res: Response) => {
   try {
     const { name, code, category, price, capacity, availableSeats, date, time, location, description, status, createdById, ticketTypes } = req.body;
@@ -151,7 +151,7 @@ eventsRouter.post('/', verifyToken, async (req: Request, res: Response) => {
         price: eventPrice,
         capacity: eventCapacity,
         availableSeats: eventAvailableSeats,
-        date: new Date(date), // Expecting YYYY-MM-DD string
+        date: new Date(date),
         time: time || '19:00',
         location,
         description: description || '',
@@ -176,7 +176,7 @@ eventsRouter.post('/', verifyToken, async (req: Request, res: Response) => {
   }
 });
 
-// PUT update event
+
 eventsRouter.put('/:id', verifyToken, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -221,8 +221,7 @@ eventsRouter.put('/:id', verifyToken, async (req: Request, res: Response) => {
       }
     }
 
-    // Update ticket types. This is a simplified approach, a more robust solution
-    // would handle adds, updates, and deletes for individual ticket types.
+
     await prisma.ticketType.deleteMany({ where: { eventId: id } });
     
     const updatedEvent = await prisma.event.update({
@@ -234,7 +233,7 @@ eventsRouter.put('/:id', verifyToken, async (req: Request, res: Response) => {
         price: eventPrice,
         capacity: eventCapacity,
         availableSeats: eventAvailableSeats,
-        date: new Date(date), // Expecting YYYY-MM-DD string
+        date: new Date(date),
         time: time || '19:00',
         location,
         description: description || '',
@@ -259,7 +258,7 @@ eventsRouter.put('/:id', verifyToken, async (req: Request, res: Response) => {
   }
 });
 
-// DELETE event
+
 eventsRouter.delete('/:id', verifyToken, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -273,7 +272,7 @@ eventsRouter.delete('/:id', verifyToken, async (req: Request, res: Response) => 
       return;
     }
 
-    // Delete related records first to avoid foreign key constraints
+
     await prisma.bookingItem.deleteMany({ where: { booking: { eventId: id } } });
     await prisma.booking.deleteMany({ where: { eventId: id } });
     await prisma.review.deleteMany({ where: { eventId: id } });

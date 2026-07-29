@@ -4,14 +4,14 @@ import { verifyToken } from '../auth.middleware.js';
 
 export const reviewsRouter = Router();
 
-// Create Review Route
+
 reviewsRouter.post('/', verifyToken, async (req: Request, res: Response) => {
   try {
     const { eventId, rating, feedback } = req.body;
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
-    // Get user's name from database
+
     const user = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
     if (!user) return res.status(404).json({ error: 'User not found' });
     const userName = user.name;
@@ -25,7 +25,7 @@ reviewsRouter.post('/', verifyToken, async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Rating must be an integer between 1 and 5.' });
     }
 
-    // Verify booking exists so only genuine attendees can rate
+
     const hasBooking = await prisma.booking.findFirst({
       where: {
         eventId,
@@ -38,7 +38,7 @@ reviewsRouter.post('/', verifyToken, async (req: Request, res: Response) => {
       return res.status(403).json({ error: 'Only confirmed attendees who have booked a ticket can submit reviews.' });
     }
 
-    // Check if user already reviewed this event
+
     const existingReview = await prisma.review.findFirst({
       where: { eventId, userId }
     });
@@ -67,7 +67,7 @@ reviewsRouter.post('/', verifyToken, async (req: Request, res: Response) => {
   }
 });
 
-// Fetch Reviews for an Event
+
 reviewsRouter.get('/event/:eventId', async (req: Request, res: Response) => {
   try {
     const { eventId } = req.params;
@@ -82,7 +82,7 @@ reviewsRouter.get('/event/:eventId', async (req: Request, res: Response) => {
       orderBy: { createdAt: 'desc' }
     });
 
-    // Compute metrics
+
     const totalReviews = reviews.length;
     const averageRating = totalReviews > 0
       ? Number((reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews).toFixed(1))

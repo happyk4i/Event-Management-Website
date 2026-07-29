@@ -9,12 +9,18 @@ cloudinary.config({
   secure: true,
 });
 
-export const uploadImage = async (buffer: Buffer, folderName: string, mimetype: string): Promise<{ url: string; publicId: string }> => {
+export const uploadImage = async (
+  buffer: Buffer,
+  _folder: string,
+  _mimetype: string
+): Promise<{ url: string; publicId: string }> => {
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
       {
-        folder: folderName,
+        folder: 'eventkuy/payment-proofs',
         resource_type: 'image',
+        type: 'authenticated',
+
       },
       (error, result) => {
         if (error || !result) {
@@ -25,21 +31,28 @@ export const uploadImage = async (buffer: Buffer, folderName: string, mimetype: 
       }
     );
 
-    // Write buffer to stream
     const { Readable } = require('stream');
-    const readableStream = new Readable();
-    readableStream.push(buffer);
-    readableStream.push(null);
-    readableStream.pipe(uploadStream);
+    const readable = new Readable();
+    readable.push(buffer);
+    readable.push(null);
+    readable.pipe(uploadStream);
   });
 };
 
 export const deleteImage = async (publicId: string) => {
   try {
-    const result = await cloudinary.uploader.destroy(publicId);
-    return result;
+    return await cloudinary.uploader.destroy(publicId, { type: 'authenticated' });
   } catch (error) {
     console.error('Cloudinary delete error:', error);
     throw new Error('Failed to delete image from Cloudinary.');
   }
+};
+
+export const getSignedUrl = (publicId: string, expiresInSeconds = 3600): string => {
+  return cloudinary.url(publicId, {
+    type: 'authenticated',
+    sign_url: true,
+    expires_at: Math.floor(Date.now() / 1000) + expiresInSeconds,
+    secure: true,
+  });
 };

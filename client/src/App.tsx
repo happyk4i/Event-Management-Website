@@ -71,45 +71,36 @@ import EventFilters from './component/EventFilters.js';
 import EventCatalog from './component/EventCatalog.js';
 import Pagination from './component/Pagination.js';
 import OrganizerDashboard from './component/OrganizerDashboard.js';
+import CustomerBookings from './component/CustomerBookings.js';
+import PaymentReview from './component/PaymentReview.js';
 import Footer from './component/Footer.js';
 import AuthModal from './component/AuthModal.js';
 import EventFormModal from './component/EventFormModal.js';
 import EventDetailsModal from './component/EventDetailsModal.js';
 import EventAssistantDock from './component/EventAssistantDock.js';
 
-// Confirmation Dialog Component
-function ConfirmationDialog({
-  isOpen,
-  title,
-  message,
-  onConfirm,
-  onCancel
-}: {
-  isOpen: boolean;
-  title: string;
-  message: string;
-  onConfirm: () => void;
-  onCancel: () => void;
-}) {
+
+function ConfirmDialog({ isOpen, title, message, onConfirm, onCancel, confirmText = 'Confirm', cancelText = 'Cancel', isDestructive = false }: any) {
   if (!isOpen) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-white border-4 border-black p-6 max-w-md w-full shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-        <h3 className="text-lg font-black text-[#1a1a2e] mb-3">{title}</h3>
-        <p className="text-sm text-gray-600 mb-4">{message}</p>
-        <div className="flex justify-end space-x-2">
-          <button
-            onClick={onCancel}
-            className="px-4 py-2 text-xs font-black border-2 border-gray-400 bg-white hover:bg-gray-100"
-          >
-            BATAL
-          </button>
-          <button
-            onClick={onConfirm}
-            className="px-4 py-2 text-xs font-black border-2 border-black bg-[#FF4757] text-white hover:bg-[#FF6B9D]"
-          >
-            YA, LANJUTKAN
-          </button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+      <div className="bg-[#FFFEF9] w-full max-w-md nb-border nb-shadow animate-scale-in" onClick={e => e.stopPropagation()}>
+        <div className={`p-4 border-b-2 border-[#1a1a2e] ${isDestructive ? 'bg-[#FF6B9D]' : 'bg-[#FFD700]'}`}>
+          <h3 className="font-black text-xl text-[#1a1a2e] flex items-center gap-2">
+            {isDestructive ? <ShieldAlert className="w-6 h-6" /> : <HelpCircle className="w-6 h-6" />}
+            {title}
+          </h3>
+        </div>
+        <div className="p-6">
+          <p className="text-[#1a1a2e] font-medium mb-6 text-lg">{message}</p>
+          <div className="flex justify-end gap-4">
+            <button onClick={onCancel} className="nb-btn px-6 py-2.5 bg-white text-[#1a1a2e] hover:bg-gray-100">
+              {cancelText}
+            </button>
+            <button onClick={onConfirm} className={`nb-btn px-6 py-2.5 text-[#1a1a2e] ${isDestructive ? 'bg-[#FF6B9D] hover:bg-[#ff4d88]' : 'bg-[#7CFC00] hover:bg-[#6be000]'}`}>
+              {confirmText}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -117,7 +108,8 @@ function ConfirmationDialog({
 }
 
 export default function App() {
-  // Authentication & Session State
+
+
   const savedSession = (() => {
     try {
       return JSON.parse(localStorage.getItem('ephemeral_user') || 'null');
@@ -129,10 +121,10 @@ export default function App() {
   const [authToken, setAuthToken] = useState<string | null>(savedSession?.token || null);
   const [userProfile, setUserProfile] = useState<{ pointRecords: PointRecord[]; coupons: Coupon[] } | null>(null);
 
-  // AI assistant panel
+
   const [isChatOpen, setIsChatOpen] = useState(false);
 
-  // Core Event Lists & Pagination States
+
   const [events, setEvents] = useState<Event[]>([]);
   const [totalCount, setTotalCount] = useState<number>(0);
   const [totalPages, setTotalPages] = useState<number>(1);
@@ -140,20 +132,20 @@ export default function App() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Layout View Mode State (grid or list)
+
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
-  // Filter States
+
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [selectedStatus, setSelectedStatus] = useState<string>('All');
   const [selectedLocation, setSelectedLocation] = useState<string>('');
 
-  // Active View Tab ('explore' | 'dashboard')
-  const [activeTab, setActiveTab] = useState<'explore' | 'dashboard'>('explore');
 
-  // Auth Card Modals / Views
+  const [activeTab, setActiveTab] = useState<'explore' | 'dashboard' | 'bookings' | 'payment-review'>('explore');
+
+
   const [isAuthOpen, setIsAuthOpen] = useState<boolean>(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [authName, setAuthName] = useState<string>('');
@@ -163,30 +155,30 @@ export default function App() {
   const [authReferredBy, setAuthReferredBy] = useState<string>('');
   const [authError, setAuthError] = useState<string | null>(null);
 
-  // Event Creation & Update Modal
+
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
 
-  // Event Details Modal & Checkout
+
   const [isDetailsOpen, setIsDetailsOpen] = useState<boolean>(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [selectedEventReviews, setSelectedEventReviews] = useState<Review[]>([]);
   const [reviewsStats, setReviewsStats] = useState<{ totalReviews: number; averageRating: number }>({ totalReviews: 0, averageRating: 0 });
   const [isReviewsLoading, setIsReviewsLoading] = useState<boolean>(false);
 
-  // Ticket checkout settings
+
   const [applyCouponId, setApplyCouponId] = useState<string>('');
   const [redeemPoints, setRedeemPoints] = useState<boolean>(false);
   const [pointsToUseInput, setPointsToUseInput] = useState<number>(0);
 
-  // Event Feedback State
+
   const [userRating, setUserRating] = useState<number>(5);
   const [userFeedback, setUserFeedback] = useState<string>('');
   const [feedbackError, setFeedbackError] = useState<string | null>(null);
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState<boolean>(false);
 
-  // Form Fields State for Event Creator
+
   const [formName, setFormName] = useState<string>('');
   const [formDescription, setFormDescription] = useState<string>('');
   const [formCode, setFormCode] = useState<string>('');
@@ -200,39 +192,39 @@ export default function App() {
   const [formStatus, setFormStatus] = useState<string>(STATUSES[0]);
   const [formError, setFormError] = useState<string | null>(null);
 
-  // Transaction Lists & Stats
+
   const [dashboardStats, setDashboardStats] = useState<any>(null);
   const [statsRange, setStatsRange] = useState<'daily' | 'monthly' | 'yearly'>('daily');
   const [statsLoading, setStatsLoading] = useState<boolean>(false);
   const [myTransactions, setMyTransactions] = useState<Transaction[]>([]);
 
-  // Interactive UI indicators
+
   const [isSeeding, setIsSeeding] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isBooking, setIsBooking] = useState<boolean>(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
-  // Confirmation Dialog State
+
   const [showConfirm, setShowConfirm] = useState<{
     type: 'delete' | 'event' | 'book' | null;
     payload?: any;
   }>({ type: null });
 
-  // 1. Debounce Search Bar Input
+
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearchQuery(searchQuery);
-      setCurrentPage(1); // Reset page on new search
-    }, 450); // 450ms debounce
+      setCurrentPage(1);
+    }, 450);
     return () => clearTimeout(handler);
   }, [searchQuery]);
 
-  // 2. Fetch Events when filters, search queries, or page changes
+
   useEffect(() => {
     fetchEvents();
   }, [debouncedSearchQuery, selectedCategory, selectedStatus, selectedLocation, currentPage]);
 
-  // 3. Fetch User profile metrics if logged in
+
   useEffect(() => {
     if (currentUser && authToken) {
       fetchUserProfile();
@@ -247,7 +239,7 @@ export default function App() {
     }
   }, [currentUser, authToken]);
 
-  // Fetch Events from backend with custom parameters
+
   const fetchEvents = async () => {
     setIsLoading(true);
     setError(null);
@@ -275,7 +267,7 @@ export default function App() {
     }
   };
 
-  // Fetch profile points & coupons
+
   const fetchUserProfile = async () => {
       if (!currentUser) return;
       try {
@@ -312,7 +304,7 @@ export default function App() {
       }
     };
 
-  // Fetch transactions of currently logged in buyer
+
   const fetchMyTransactions = async () => {
     if (!currentUser) return;
     try {
@@ -341,7 +333,7 @@ export default function App() {
     }
   };
 
-  // Fetch organizer statistics for chart dashboard
+
   const fetchDashboardStats = async () => {
     if (!currentUser || currentUser.role !== 'Organizer') return;
     setStatsLoading(true);
@@ -368,7 +360,7 @@ export default function App() {
     }
   };
 
-  // Load reviews for the selected event details
+
   const fetchEventReviews = async (eventId: string) => {
     setIsReviewsLoading(true);
     try {
@@ -379,13 +371,13 @@ export default function App() {
         setReviewsStats(data.stats || { totalReviews: 0, averageRating: 0 });
       }
     } catch (error) {
-      // silently fail - error handled via UI toast
+
     } finally {
       setIsReviewsLoading(false);
     }
   };
 
-  // Display floating notification
+
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToast({ message, type });
     setTimeout(() => {
@@ -393,7 +385,7 @@ export default function App() {
     }, 4500);
   };
 
-  // Seed Event Records Helper
+
   const handleSeedDatabase = async () => {
     setIsSeeding(true);
     try {
@@ -412,7 +404,7 @@ export default function App() {
     }
   };
 
-  // Perform Register
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError(null);
@@ -440,7 +432,7 @@ export default function App() {
       }
 
       showToast('Registration complete! Welcome to Ephemeral Platform.');
-      // Auto-login
+
       localStorage.setItem('ephemeral_user', JSON.stringify({ ...data.user, token: data.token }));
       setCurrentUser(data.user);
       setAuthToken(data.token || null);
@@ -451,7 +443,7 @@ export default function App() {
     }
   };
 
-  // Perform Login
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError(null);
@@ -483,7 +475,7 @@ export default function App() {
     }
   };
 
-  // Logout session
+
   const handleLogout = () => {
     localStorage.removeItem('ephemeral_user');
     setCurrentUser(null);
@@ -501,7 +493,7 @@ export default function App() {
     setAuthError(null);
   };
 
-  // View Details Model Loader
+
   const handleOpenDetails = (event: Event) => {
     setSelectedEvent(event);
     setApplyCouponId('');
@@ -513,7 +505,7 @@ export default function App() {
     fetchEventReviews(event.id);
   };
 
-  // Check out Purchase Ticket - with confirmation dialog
+
   const handleBookTicket = () => {
     if (!currentUser) {
       setIsDetailsOpen(false);
@@ -532,7 +524,7 @@ export default function App() {
     setShowConfirm({ type: 'book', payload: { event: selectedEvent } });
   };
 
-  // Execute the booking after confirmation
+
   const executeBooking = async () => {
     if (!selectedEvent || !currentUser) return;
     
@@ -568,7 +560,7 @@ export default function App() {
       showToast(`Booking Created! Awaiting payment proof for "${selectedEvent.name}".`);
       setIsDetailsOpen(false);
 
-      // Update local catalogs
+
       fetchEvents();
       fetchUserProfile();
       fetchMyTransactions();
@@ -580,7 +572,7 @@ export default function App() {
     }
   };
 
-  // Submit Feedback Review
+
   const handleSubmitFeedback = async (e: React.FormEvent) => {
     e.preventDefault();
     setFeedbackError(null);
@@ -621,7 +613,7 @@ export default function App() {
     }
   };
 
-  // Open Event Creation Modal
+
   const openCreateModal = () => {
     setModalMode('create');
     setEditingEventId(null);
@@ -643,7 +635,7 @@ export default function App() {
   };
 
   const openEditModal = (event: Event, e: React.MouseEvent) => {
-    e.stopPropagation(); // Avoid triggering card details click
+    e.stopPropagation();
     setModalMode('edit');
     setEditingEventId(event.id);
     setFormName(event.name);
@@ -661,12 +653,12 @@ export default function App() {
     setIsModalOpen(true);
   };
 
-  // Submit Listing Event
+
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
 
-    // Form validation
+
     if (!formName.trim()) {
       setFormError('Please enter a descriptive Event Name.');
       return;
@@ -755,13 +747,13 @@ export default function App() {
     }
   };
 
-  // Delete event listing helper - triggers confirmation dialog
+
   const handleDeleteEvent = (id: string, name: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setShowConfirm({ type: 'delete', payload: { id, name } });
   };
 
-  // Execute delete after confirmation
+
   const executeDelete = async () => {
     const { id, name } = showConfirm.payload!;
     try {
@@ -783,7 +775,7 @@ export default function App() {
     }
   };
 
-  // Event SKU code generator
+
   const handleAutoGenerateCode = () => {
     if (!formName) {
       setFormError('Type an Event Title first to generate a structured SKU code.');
@@ -808,26 +800,26 @@ export default function App() {
     setFormCode(`${prefix}-${yearPart}-${randCode}`);
   };
 
-  // Verification if buyer has purchased ticket to display review box
+
   const hasPurchasedSelectedEvent = () => {
     if (!currentUser) return false;
     if (!selectedEvent) return false;
     return myTransactions.some((t: { eventId: any; }) => t.eventId === selectedEvent.id);
   };
 
-  // Calculations for checkout summary
+
   const getCheckoutPricing = () => {
     if (!selectedEvent) return { originalPrice: 0, earlyBird: 0, coupon: 0, points: 0, finalPrice: 0 };
     let orig = selectedEvent.price;
 
-    // Date-based 5% early bird discount (if scheduled date > 30 days out)
+
     let earlyBird = 0;
     const daysOut = (new Date(selectedEvent.date).getTime() - new Date().getTime()) / (1000 * 3600 * 24);
     if (daysOut > 30 && orig > 0) {
       earlyBird = orig * 0.05;
     }
 
-    // Selected coupon deduction (10% on remaining)
+
     let couponDeduction = 0;
     if (applyCouponId && userProfile) {
       const matchedCoupon = userProfile.coupons.find((c: { id: any; }) => c.id === applyCouponId);
@@ -836,7 +828,7 @@ export default function App() {
       }
     }
 
-    // Points deduction (1 point = 1 IDR)
+
     let maxPointsAllowed = Math.max(0, orig - earlyBird - couponDeduction);
     let ptsUsed = 0;
     if (redeemPoints && currentUser) {
@@ -854,7 +846,7 @@ export default function App() {
 
   const checkoutPricing = getCheckoutPricing();
 
-  // Handle confirmation dialog actions
+
   const handleConfirm = () => {
     if (showConfirm.type === 'delete') {
       executeDelete();
@@ -863,20 +855,18 @@ export default function App() {
     }
   };
 
-  // ===================================================================
-  // NEO-BRUTALISM RENDER
-  // ===================================================================
+
 
   return (
     <div className="min-h-screen bg-[#FFFEF9] dot-grid-bg text-[#1a1a2e] flex flex-col font-sans selection:bg-[#FFD700]/40" id="app-root-container">
 
-      {/* =================== TOAST NOTIFICATION =================== */}
+      {}
       <ToastNotification toast={toast} onClose={() => setToast(null)} />
 
-      {/* =================== MARQUEE TOP BANNER =================== */}
+      {}
       <TopMarquee />
 
-      {/* =================== NAVIGATION HEADER =================== */}
+      {}
       <MainNavigation
         currentUser={currentUser}
         activeTab={activeTab}
@@ -886,23 +876,23 @@ export default function App() {
         handleLogout={handleLogout}
       />
 
-      {/* =================== HERO SECTION WITH 3D =================== */}
+      {}
       {activeTab === 'explore' && <HeroSection totalCount={totalCount} />}
 
-      {/* Expirations Warning */}
+      {}
       {currentUser && (
         <div className="max-w-7xl mx-auto w-full px-6 mt-6">
           <ExpirationsWarning userProfile={userProfile} />
         </div>
       )}
 
-      {/* =================== MAIN CONTAINER =================== */}
+      {}
       <main className="flex-1 max-w-7xl w-full mx-auto p-6 space-y-8">
 
-        {/* =================== VIEW 1: EXPLORE CATALOG =================== */}
+        {}
         {activeTab === 'explore' && (
           <div className="space-y-8" id="explore-panel">
-            {/* Customer Points & Voucher widget */}
+            {}
             {currentUser && currentUser.role === 'Customer' && (
               <CustomerRewardsPanel
                 currentUser={currentUser}
@@ -914,7 +904,7 @@ export default function App() {
               />
             )}
 
-            {/* Filter, Search & Location */}
+            {}
             <EventFilters
               searchQuery={searchQuery}
               setSearchQuery={setSearchQuery}
@@ -932,7 +922,7 @@ export default function App() {
               setCurrentPage={setCurrentPage}
             />
 
-            {/* =================== EVENT CARDS =================== */}
+            {}
             <EventCatalog
               events={events}
               viewMode={viewMode}
@@ -949,7 +939,7 @@ export default function App() {
               fetchEvents={fetchEvents}
             />
 
-            {/* =================== PAGINATION =================== */}
+            {}
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
@@ -959,7 +949,7 @@ export default function App() {
           </div>
         )}
 
-        {/* =================== VIEW 2: ORGANIZER DASHBOARD =================== */}
+        {}
         {activeTab === 'dashboard' && currentUser?.role === 'Organizer' && (
           <OrganizerDashboard
             dashboardStats={dashboardStats}
@@ -973,12 +963,22 @@ export default function App() {
           />
         )}
 
+        {}
+        {activeTab === 'bookings' && authToken && (
+          <CustomerBookings token={authToken} onToast={showToast} />
+        )}
+
+        {}
+        {activeTab === 'payment-review' && authToken && currentUser && (currentUser.role === 'Organizer' || currentUser.role === 'Admin') && (
+          <PaymentReview token={authToken} onToast={showToast} />
+        )}
+
       </main>
 
-      {/* =================== FOOTER =================== */}
+      {}
       <Footer />
 
-      {/* =================== AUTH MODAL =================== */}
+      {}
       <AuthModal
         isAuthOpen={isAuthOpen}
         setIsAuthOpen={setIsAuthOpen}
@@ -1000,7 +1000,7 @@ export default function App() {
         resetAuthFields={resetAuthFields}
       />
 
-      {/* =================== EVENT CREATE/EDIT MODAL =================== */}
+      {}
       <EventFormModal
         isModalOpen={isModalOpen}
         setIsModalOpen={setIsModalOpen}
@@ -1033,7 +1033,7 @@ export default function App() {
         isSubmitting={isSubmitting}
       />
 
-      {/* =================== EVENT DETAILS + CHECKOUT MODAL =================== */}
+      {}
       <EventDetailsModal
         isDetailsOpen={isDetailsOpen}
         selectedEvent={selectedEvent}
@@ -1062,13 +1062,13 @@ export default function App() {
         isBooking={isBooking}
       />
 
-      {/* =================== EVENT ASSISTANT DOCK =================== */}
+      {}
       {currentUser && (
         <EventAssistantDock isChatOpen={isChatOpen} setIsChatOpen={setIsChatOpen} />
       )}
 
-      {/* =================== CONFIRMATION DIALOG =================== */}
-      <ConfirmationDialog
+      {}
+      <ConfirmDialog
         isOpen={showConfirm.type !== null}
         title={showConfirm.type === 'delete' ? 'HAPUS EVENT?' : 'PROMESIKAN PEMBELIAN?'}
         message={

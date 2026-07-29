@@ -7,40 +7,40 @@ async function startServer() {
   const app = express();
   const PORT = Number(process.env.PORT || 3000);
 
-  // JSON parsing middleware
+
   app.use(express.json());
 
-  // Healthcheck endpoint
+
   app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date() });
   });
 
-  // AI chatbot endpoint
+
   const { chatRouter } = await import('./routes/chat.js');
   app.use('/api/chat', chatRouter);
 
-  // Events REST endpoints
+
   const { eventsRouter } = await import('./routes/events.js');
   app.use('/api/events', eventsRouter);
 
-  // Authentication REST endpoints
+
   const { authRouter } = await import('./routes/auth.js');
   app.use('/api/auth', authRouter);
   app.use('/api/dashboard', dashboardRouter);
 
-  // Transactions & Promotions endpoints
+
   const { transactionsRouter } = await import('./routes/transactions.js');
   app.use('/api/transactions', transactionsRouter);
 
-  // Event Reviews & Feedback endpoints
+
   const { reviewsRouter } = await import('./routes/reviews.js');
   app.use('/api/reviews', reviewsRouter);
 
-  // Bookings & Payment Verification endpoints
+
   const { bookingsRouter } = await import('./routes/bookings.js');
   app.use('/api/bookings', bookingsRouter);
 
-  // Vite middleware integration for dynamic full-stack development
+
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
       server: { middlewareMode: true },
@@ -48,13 +48,27 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    // Serve static frontend files in production
+
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
     app.get('*', (req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }
+
+
+  const { expireOldPendingBookings } = await import('./services/bookingExpiry.js');
+  setInterval(async () => {
+    try {
+      const n = await expireOldPendingBookings();
+      if (n > 0) console.log(`[Scheduler] Expired ${n} stale booking(s) and restored their seats.`);
+    } catch (err) {
+      console.error('[Scheduler] booking expiry failed:', err);
+    }
+  }, 5 * 60 * 1000);
+
+
+
 
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`[Server] running on http://localhost:${PORT}`);

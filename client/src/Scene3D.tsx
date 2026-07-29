@@ -3,7 +3,7 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { Float } from '@react-three/drei';
 import * as THREE from 'three';
 
-// Individual floating shape component
+
 function FloatingShape({ 
   position, 
   color, 
@@ -27,7 +27,7 @@ function FloatingShape({
       meshRef.current.rotation.y += 0.005 * rotationSpeed;
       meshRef.current.rotation.z += 0.002 * rotationSpeed;
       
-      // Subtle floating motion
+
       meshRef.current.position.y = position[1] + Math.sin(state.clock.elapsedTime * speed) * 0.3;
     }
   });
@@ -62,7 +62,7 @@ function FloatingShape({
           transparent
           opacity={0.85}
         />
-        {/* Wireframe overlay for brutalist aesthetic */}
+        {}
         <mesh scale={1.01}>
           {getGeometry()}
           <meshBasicMaterial color="#1a1a2e" wireframe transparent opacity={0.3} />
@@ -72,7 +72,7 @@ function FloatingShape({
   );
 }
 
-// Particle field component
+
 function ParticleField() {
   const particlesRef = useRef<THREE.Points>(null!);
   
@@ -108,7 +108,7 @@ function ParticleField() {
   );
 }
 
-// Main Scene3D component
+
 export default function Scene3D() {
   return (
     <div className="three-canvas-container">
@@ -123,7 +123,7 @@ export default function Scene3D() {
         <directionalLight position={[-5, -3, 2]} intensity={0.5} color="#FF6B9D" />
         <pointLight position={[0, 3, 4]} intensity={0.8} color="#00D4FF" />
 
-        {/* Floating geometric shapes with Neo-brutalism colors */}
+        {}
         <FloatingShape position={[-4, 1.5, -2]} color="#FFD700" geometry="torus" speed={0.8} scale={0.9} />
         <FloatingShape position={[4.5, -0.5, -1]} color="#FF6B9D" geometry="icosahedron" speed={1.2} scale={0.7} />
         <FloatingShape position={[-2, -1.5, -3]} color="#00D4FF" geometry="octahedron" speed={0.6} scale={0.8} />

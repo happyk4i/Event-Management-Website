@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import dotenv from 'dotenv';
 
-// Pastikan dotenv dimuat paling atas agar proses internal Node tahu nilai DATABASE_URL
+
 dotenv.config();
 
 const connectionString = process.env.DATABASE_URL;

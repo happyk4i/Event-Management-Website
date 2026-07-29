@@ -48,7 +48,7 @@ export default function EventFormModal({
   return (
     <div className="fixed inset-0 nb-overlay z-50 flex items-center justify-center p-4">
       <div className="bg-white nb-border-thick max-w-lg w-full shadow-2xl relative max-h-[90vh] overflow-y-auto nb-shadow-lg animate-bounce-in">
-        {/* Colored header */}
+        {}
         <div className="h-3 bg-[#7CFC00]" />
 
         <div className="p-6">

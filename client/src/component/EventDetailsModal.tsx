@@ -69,7 +69,7 @@ export default function EventDetailsModal({
           <X className="h-4 w-4" />
         </button>
 
-        {/* Left Column: Details & Reviews */}
+        {}
         <div className="md:col-span-7 p-6 space-y-5">
           <div className="h-2 -mx-6 -mt-6 mb-4 bg-[#FF6B9D]" />
           <div className="space-y-2">
@@ -103,7 +103,7 @@ export default function EventDetailsModal({
             </p>
           </div>
 
-          {/* Reviews */}
+          {}
           <div className="space-y-4 pt-3 border-t-3 border-[#1a1a2e]">
             <div className="flex items-center justify-between">
               <span className="text-[10px] uppercase tracking-widest font-black text-gray-400 flex items-center space-x-1">
@@ -178,7 +178,7 @@ export default function EventDetailsModal({
           </div>
         </div>
 
-        {/* Right Column: Checkout */}
+        {}
         <div className="md:col-span-5 bg-[#1a1a2e] border-l-4 border-[#FFD700] p-5 space-y-5 flex flex-col justify-between">
           <div className="space-y-4">
             <span className="text-[10px] uppercase tracking-widest font-black text-[#FFD700] block border-b-2 border-[#FFD700]/30 pb-2">🎟️ Ticket Checkout</span>

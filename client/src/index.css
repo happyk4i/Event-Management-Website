@@ -8,7 +8,7 @@
 }
 
 :root {
-  /* Neo-Brutalism Color Palette */
+  
   --nb-yellow: #FFD700;
   --nb-pink: #FF6B9D;
   --nb-cyan: #00D4FF;
@@ -23,9 +23,7 @@
   --nb-shadow: #1a1a2e;
 }
 
-/* ============================================
-   CUSTOM SCROLLBAR
-   ============================================ */
+
 ::-webkit-scrollbar {
   width: 12px;
 }
@@ -44,11 +42,9 @@
   background: var(--nb-pink);
 }
 
-/* ============================================
-   KEYFRAME ANIMATIONS
-   ============================================ */
 
-/* Marquee scroll */
+
+
 @keyframes marquee {
   0% {
     transform: translateX(0);
@@ -59,7 +55,7 @@
   }
 }
 
-/* Float up-down */
+
 @keyframes float {
 
   0%,
@@ -72,7 +68,7 @@
   }
 }
 
-/* Shake on hover */
+
 @keyframes shake {
 
   0%,
@@ -89,7 +85,7 @@
   }
 }
 
-/* Glitch effect */
+
 @keyframes glitch {
 
   0%,
@@ -110,7 +106,7 @@
   }
 }
 
-/* Bounce enter */
+
 @keyframes bounceIn {
   0% {
     transform: scale(0.3);
@@ -131,7 +127,7 @@
   }
 }
 
-/* Pulse glow */
+
 @keyframes pulseGlow {
 
   0%,
@@ -144,7 +140,7 @@
   }
 }
 
-/* Slide in from bottom */
+
 @keyframes slideUp {
   0% {
     transform: translateY(30px);
@@ -157,7 +153,7 @@
   }
 }
 
-/* Rotate continuous */
+
 @keyframes rotateSlow {
   0% {
     transform: rotate(0deg);
@@ -168,7 +164,7 @@
   }
 }
 
-/* Card entrance stagger */
+
 @keyframes cardEnter {
   0% {
     transform: translateY(40px) scale(0.95);
@@ -181,7 +177,7 @@
   }
 }
 
-/* Wiggle */
+
 @keyframes wiggle {
 
   0%,
@@ -210,7 +206,7 @@
   }
 }
 
-/* Confetti explosion */
+
 @keyframes confetti-fall {
   0% {
     transform: translateY(-100vh) rotate(0deg);
@@ -223,9 +219,7 @@
   }
 }
 
-/* ============================================
-   ANIMATION UTILITY CLASSES
-   ============================================ */
+
 .animate-marquee {
   animation: marquee 20s linear infinite;
 }
@@ -262,7 +256,7 @@
   animation: cardEnter 0.5s ease-out both;
 }
 
-/* Stagger delays for cards */
+
 .stagger-1 {
   animation-delay: 0.05s;
 }
@@ -287,11 +281,9 @@
   animation-delay: 0.3s;
 }
 
-/* ============================================
-   NEO-BRUTALISM COMPONENT STYLES
-   ============================================ */
 
-/* Hard shadow box */
+
+
 .nb-shadow {
   box-shadow: 4px 4px 0px var(--nb-shadow);
 }
@@ -308,7 +300,7 @@
   box-shadow: 12px 12px 0px var(--nb-shadow);
 }
 
-/* Shadow colors */
+
 .nb-shadow-yellow {
   box-shadow: 4px 4px 0px var(--nb-yellow);
 }
@@ -329,7 +321,7 @@
   box-shadow: 4px 4px 0px var(--nb-purple);
 }
 
-/* Hard border */
+
 .nb-border {
   border: 3px solid var(--nb-border);
 }
@@ -338,7 +330,7 @@
   border: 4px solid var(--nb-border);
 }
 
-/* Interactive card hover — shift shadow */
+
 .nb-card-hover {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
@@ -353,7 +345,7 @@
   box-shadow: 0px 0px 0px var(--nb-shadow);
 }
 
-/* Neo-brutal button base */
+
 .nb-btn {
   border: 3px solid var(--nb-dark);
   box-shadow: 4px 4px 0px var(--nb-dark);
@@ -374,7 +366,7 @@
   box-shadow: 0px 0px 0px var(--nb-dark);
 }
 
-/* Neo-brutal input */
+
 .nb-input {
   border: 3px solid var(--nb-dark);
   background: white;
@@ -394,7 +386,7 @@
   font-style: italic;
 }
 
-/* Neo-brutal select */
+
 .nb-select {
   border: 3px solid var(--nb-dark);
   background: white;
@@ -409,13 +401,13 @@
   box-shadow: 4px 4px 0px var(--nb-cyan);
 }
 
-/* Dot grid background pattern */
+
 .dot-grid-bg {
   background-image: radial-gradient(circle, #ddd 1px, transparent 1px);
   background-size: 24px 24px;
 }
 
-/* Cross-hatch pattern */
+
 .crosshatch-bg {
   background-image: repeating-linear-gradient(45deg,
       transparent,
@@ -424,7 +416,7 @@
       rgba(0, 0, 0, 0.03) 11px);
 }
 
-/* Striped accent */
+
 .striped-bg {
   background-image: repeating-linear-gradient(-45deg,
       transparent,
@@ -433,17 +425,13 @@
       rgba(0, 0, 0, 0.05) 10px);
 }
 
-/* ============================================
-   MODAL OVERLAY
-   ============================================ */
+
 .nb-overlay {
   background: rgba(26, 26, 46, 0.85);
   backdrop-filter: blur(4px);
 }
 
-/* ============================================
-   CONFETTI PARTICLES
-   ============================================ */
+
 .confetti-piece {
   position: fixed;
   width: 10px;
@@ -453,9 +441,7 @@
   animation: confetti-fall 3s linear forwards;
 }
 
-/* ============================================
-   3D CANVAS CONTAINER
-   ============================================ */
+
 .three-canvas-container {
   position: absolute;
   inset: 0;
@@ -467,9 +453,7 @@
   pointer-events: auto;
 }
 
-/* ============================================
-   RESPONSIVE OVERRIDES
-   ============================================ */
+
 @media (max-width: 768px) {
   .nb-shadow-lg {
     box-shadow: 4px 4px 0px var(--nb-shadow);
@@ -478,7 +462,7 @@
   .nb-shadow-xl {
     box-shadow: 6px 6px 0px var(--nb-shadow);
   }
-}/* Event Kuy AI chat */
+}
 .chatbot-dock { position: fixed; right: 24px; bottom: 86px; z-index: 60; width: min(430px, calc(100vw - 32px)); animation: chatbotIn .2s ease-out; }
 .chatbot-container { overflow: hidden; border: 3px solid var(--nb-dark); background: #fff; box-shadow: 7px 7px 0 var(--nb-dark); }
 .chatbot-header { display:flex; justify-content:space-between; align-items:center; padding:14px 16px; color:#fff; background:var(--nb-dark); }
@@ -522,5 +506,5 @@
 .chatbot-launcher:hover { transform:translate(-2px,-2px); box-shadow:6px 6px 0 var(--nb-dark); }
 @keyframes chatbotIn { from { opacity:0; transform:translateY(12px) scale(.98); } to { opacity:1; transform:none; } }
 @media (max-width:600px) { .chatbot-dock { right:16px; bottom:78px; width:calc(100vw - 32px); } .chatbot-launcher { right:16px; bottom:16px; } .chatbot-messages { height:52vh; } }
-/* Event assistant */
+
 .chatbot-dock{position:fixed;right:24px;bottom:84px;z-index:100;width:min(430px,calc(100vw - 32px));animation:chatIn .2s ease-out}.chatbot-container{overflow:hidden;border:3px solid #1a1a2e;background:#fff;box-shadow:7px 7px 0 #1a1a2e}.chatbot-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:#1a1a2e;color:#fff}.chatbot-header h2{margin:0;font-size:15px;font-weight:900}.chatbot-header p{margin:3px 0 0;color:#c8cad7;font-size:10px}.chatbot-header p i{display:inline-block;width:6px;height:6px;margin-right:4px;border-radius:50%;background:#7cfc00}.chatbot-logo{display:grid;place-items:center;width:34px;height:34px;border:2px solid #1a1a2e;background:#ffd700;color:#1a1a2e}.chatbot-icon-btn{display:grid;place-items:center;width:30px;height:30px;border:1px solid #606780;background:transparent;color:#fff;cursor:pointer}.chatbot-messages{display:flex;flex-direction:column;gap:12px;height:390px;overflow-y:auto;padding:18px;background:#f7f7fb}.chatbot-message{display:flex;max-width:90%}.chatbot-message.user{align-self:flex-end}.chatbot-message.assistant{align-self:flex-start}.chatbot-bubble{display:flex;gap:8px;align-items:flex-start;padding:10px 12px;border:2px solid #1a1a2e;font-size:13px;line-height:1.45}.chatbot-bubble p{margin:0;white-space:pre-wrap}.chatbot-bubble.assistant{background:#fff;color:#20243a}.chatbot-bubble.user{background:#ffd700;color:#1a1a2e}.chatbot-avatar{display:grid;place-items:center;flex:0 0 auto;width:23px;height:23px;border:1px solid #1a1a2e;background:#b388ff;color:#1a1a2e}.chatbot-event-grid{display:grid;gap:8px;margin-top:8px}.chatbot-event-card{padding:11px;border:2px solid #1a1a2e;background:#fff;box-shadow:3px 3px 0 #1a1a2e}.chatbot-event-card>span{display:inline-block;padding:3px 6px;background:#ff6b9d;font-size:9px;font-weight:900}.chatbot-event-card h3{margin:7px 0;font-size:13px}.chatbot-event-card p{display:flex;gap:4px;align-items:center;margin:4px 0;color:#596079;font-size:11px}.chatbot-event-card strong{display:block;margin-top:8px}.chatbot-error{margin:0;padding:8px 10px;background:#fff0f0;color:#b91c1c;font-size:12px}.chatbot-suggestions{display:flex;flex-wrap:wrap;gap:6px;padding:10px 14px 0}.chatbot-suggestions button{padding:6px 9px;border:1px solid #aeb2c0;border-radius:999px;background:#fff;font-size:10px;cursor:pointer}.chatbot-input-area{display:flex;gap:8px;padding:12px;border-top:2px solid #1a1a2e;background:#fff}.chatbot-input-area textarea{flex:1;resize:none;padding:10px;border:2px solid #b9bdca;outline:0;font:inherit;font-size:13px}.chatbot-input-area textarea:focus{border-color:#1a1a2e;box-shadow:2px 2px 0 #ffd700}.chatbot-input-area button{display:grid;place-items:center;width:42px;border:2px solid #1a1a2e;background:#ffd700;cursor:pointer}.chatbot-input-area button:disabled{opacity:.45;cursor:not-allowed}.chatbot-launcher{position:fixed;right:24px;bottom:24px;z-index:99;display:flex;align-items:center;gap:8px;padding:12px 16px;border:3px solid #1a1a2e;box-shadow:4px 4px 0 #1a1a2e;background:#ffd700;color:#1a1a2e;font-size:12px;font-weight:900;cursor:pointer}.chatbot-launcher:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 #1a1a2e}@keyframes chatIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}@media(max-width:600px){.chatbot-dock{right:16px;bottom:76px}.chatbot-launcher{right:16px;bottom:16px}.chatbot-messages{height:52vh}}

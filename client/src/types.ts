@@ -20,7 +20,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: 'Customer' | 'Organizer';
+  role: 'Customer' | 'Organizer' | 'Admin';
   referralCode: string;
   pointsBalance: number;
   createdAt?: string;
@@ -59,6 +59,46 @@ export interface PointRecord {
   expiryDate: string;
   isUsed: boolean;
   createdAt?: string;
+}
+
+export interface TicketType {
+  id: string;
+  name: string;
+  price: number;
+  capacity: number;
+  availableSeats: number;
+}
+
+export interface BookingItem {
+  id: string;
+  bookingId: string;
+  ticketTypeId: string;
+  quantity: number;
+  pricePerItem: number;
+  subtotal: number;
+  ticketType?: TicketType;
+}
+
+export interface Booking {
+  id: string;
+  eventId: string;
+  userId: string;
+  voucherCode?: string;
+  voucherId?: string;
+  appliedPoints: number;
+  totalPrice: number;
+  status: string;
+  bookedAt: string;
+  earlyBirdDiscount: number;
+  paymentProofUrl?: string;
+  paymentProofPublicId?: string;
+  paymentStatus: string;
+  verifiedByUserId?: string;
+  verifiedAt?: string;
+  rejectReason?: string;
+  event?: Event;
+  user?: User;
+  bookingItems?: BookingItem[];
 }
 
 export interface Coupon {

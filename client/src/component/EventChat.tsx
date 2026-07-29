@@ -72,7 +72,7 @@ export default function EventChat({ onClose }: { onClose?: () => void }) {
           </div>
         ))}
 
-        {/* Event cards */}
+        {}
         {events.length > 0 && (
           <div className="chatbot-event-grid">
             {events.map((event) => (
@@ -113,7 +113,7 @@ export default function EventChat({ onClose }: { onClose?: () => void }) {
         <div ref={end} />
       </div>
 
-      {/* Suggestions */}
+      {}
       {messages.length === 1 && (
         <div className="chatbot-suggestions">
           {['Cari event musik di Jakarta', 'Food event di bawah 500 ribu', 'Workshop di Bandung', 'Event gratis'].map((prompt) => (

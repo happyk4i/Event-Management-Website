@@ -170,7 +170,7 @@ export default function EventCatalog({
     );
   }
 
-  // List view
+
   return (
     <div className="bg-white nb-border nb-shadow overflow-hidden" id="list-layout">
       <div className="overflow-x-auto">
