@@ -5,28 +5,25 @@ interface RouteGuardProps {
 }
 
 export const RouteGuard: React.FC<RouteGuardProps> = ({ allowedRoles }) => {
-  // 1. Ambil token dan data user dari localStorage browser
-  const token = localStorage.getItem('token');
-  const userString = localStorage.getItem('user');
-
-  // 2. Jika tidak ada token atau data user, tendang langsung ke halaman Login
-  if (!token || !userString) {
-    return <Navigate to="/login" replace />;
-  }
-
+  // Read the same session object saved by the login and registration pages.
+  const sessionString = localStorage.getItem('ephemeral_user');
+  let session: { token?: string; role?: string } | null = null;
   try {
-    const user = JSON.parse(userString);
+    session = sessionString ? JSON.parse(sessionString) : null;
+  } catch {
+    localStorage.removeItem('ephemeral_user');
+  }
+  const token = session?.token;
 
-    // 3. Jika peran (role) user tidak sesuai dengan izin halaman, lempar ke halaman unauthorized / landing page
-    if (!allowedRoles.includes(user.role)) {
-      return <Navigate to="/unauthorized" replace />;
-    }
-
-    // 4. Jika lolos semua pemeriksaan, izinkan masuk ke halaman tujuan (Outlet)
-    return <Outlet />;
-  } catch (error) {
-    // Jika data JSON localStorage rusak/korup, bersihkan dan minta login ulang
-    localStorage.clear();
+  // Redirect unauthenticated users to login.
+  if (!token || !session) {
     return <Navigate to="/login" replace />;
   }
+
+  // Redirect users whose role cannot access this route.
+  if (!session.role || !allowedRoles.includes(session.role as 'Customer' | 'Organizer')) {
+    return <Navigate to="/unauthorized" replace />;
+  }
+
+  return <Outlet />;
 };

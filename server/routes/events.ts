@@ -1,7 +1,11 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '../db.js';
+import { verifyToken } from '../auth.middleware.js';
 
 export const eventsRouter = Router();
+
+// Helper function to format date to YYYY-MM-DD
+const formatDate = (date: Date) => date.toISOString().split('T')[0];
 
 // GET all events with filtering, search, location and pagination
 eventsRouter.get('/', async (req: Request, res: Response) => {
@@ -12,10 +16,10 @@ eventsRouter.get('/', async (req: Request, res: Response) => {
 
     if (search) {
       whereClause.OR = [
-        { name: { contains: String(search) } },
-        { code: { contains: String(search) } },
-        { location: { contains: String(search) } },
-        { description: { contains: String(search) } }
+        { name: { contains: String(search), mode: 'insensitive' as const } },
+        { code: { contains: String(search), mode: 'insensitive' as const } },
+        { location: { contains: String(search), mode: 'insensitive' as const } },
+        { description: { contains: String(search), mode: 'insensitive' as const } }
       ];
     }
 
@@ -28,10 +32,9 @@ eventsRouter.get('/', async (req: Request, res: Response) => {
     }
 
     if (location && location !== 'All' && String(location).trim() !== '') {
-      whereClause.location = { contains: String(location).trim() };
+      whereClause.location = { contains: String(location).trim(), mode: 'insensitive' as const };
     }
 
-    // Pagination logic
     const pageNum = page ? parseInt(String(page), 10) : 1;
     const limitNum = limit ? parseInt(String(limit), 10) : 6;
     const skip = (pageNum - 1) * limitNum;
@@ -41,11 +44,23 @@ eventsRouter.get('/', async (req: Request, res: Response) => {
       where: whereClause,
       orderBy: { date: 'asc' },
       skip,
-      take: limitNum
+      take: limitNum,
+      include: { ticketTypes: true } // Include ticket types for frontend
     });
 
+    // Format date for each event
+    const formattedEvents = events.map(event => ({
+      ...event,
+      date: formatDate(event.date), // Format date here
+      // Ensure ticketType prices are numbers if stored as Decimal
+      ticketTypes: event.ticketTypes.map(tt => ({
+        ...tt,
+        price: Number(tt.price)
+      }))
+    }));
+
     res.json({
-      events,
+      events: formattedEvents,
       totalCount,
       totalPages: Math.ceil(totalCount / limitNum),
       currentPage: pageNum,
@@ -53,7 +68,7 @@ eventsRouter.get('/', async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error('Error fetching events:', error);
-    res.status(500).json({ error: 'Failed to fetch events', details: error.message });
+    res.status(500).json({ error: 'Failed to fetch events' });
   }
 });
 
@@ -62,7 +77,15 @@ eventsRouter.get('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const event = await prisma.event.findUnique({
-      where: { id }
+      where: { id },
+      include: {
+        ticketTypes: true,
+        reviews: {
+          include: { user: { select: { name: true } } },
+          take: 5,
+          orderBy: { createdAt: 'desc' }
+        }
+      }
     });
 
     if (!event) {
@@ -70,7 +93,17 @@ eventsRouter.get('/:id', async (req: Request, res: Response) => {
       return;
     }
 
-    res.json(event);
+    // Format date for single event
+    const formattedEvent = {
+      ...event,
+      date: formatDate(event.date), // Format date here
+      ticketTypes: event.ticketTypes.map(tt => ({
+        ...tt,
+        price: Number(tt.price)
+      }))
+    };
+
+    res.json(formattedEvent);
   } catch (error: any) {
     console.error('Error fetching event:', error);
     res.status(500).json({ error: 'Failed to fetch event' });
@@ -78,104 +111,105 @@ eventsRouter.get('/:id', async (req: Request, res: Response) => {
 });
 
 // POST create event
-eventsRouter.post('/', async (req: Request, res: Response) => {
+eventsRouter.post('/', verifyToken, async (req: Request, res: Response) => {
   try {
-    const { name, code, category, price, capacity, availableSeats, date, time, location, description, status, organizerId } = req.body;
+    const { name, code, category, price, capacity, availableSeats, date, time, location, description, status, createdById, ticketTypes } = req.body;
 
-    // Basic Validation
-    if (!name || !code || !category || price === undefined || capacity === undefined || !date || !location || !status) {
-      res.status(400).json({ error: 'All fields (name, code, category, price, capacity, date, location, status) are required.' });
+    if (!name || !code || !category || price === undefined || capacity === undefined || !date || !location || !status || !createdById) {
+      res.status(400).json({ error: 'All required fields (name, code, category, price, capacity, date, location, status, createdById) are missing.' });
       return;
     }
 
-    if (isNaN(Number(price)) || Number(price) < 0) {
-      res.status(400).json({ error: 'Ticket price must be a valid non-negative number.' });
+    const eventPrice = parseFloat(String(price));
+    const eventCapacity = parseInt(String(capacity), 10);
+    const eventAvailableSeats = availableSeats !== undefined ? parseInt(String(availableSeats), 10) : eventCapacity;
+
+    if (isNaN(eventPrice) || eventPrice < 0 || isNaN(eventCapacity) || eventCapacity <= 0) {
+      res.status(400).json({ error: 'Invalid price or capacity.' });
+      return;
+    }
+    
+    if (isNaN(eventAvailableSeats) || eventAvailableSeats < 0 || eventAvailableSeats > eventCapacity) {
+      res.status(400).json({ error: 'Invalid available seats.' });
       return;
     }
 
-    if (isNaN(Number(capacity)) || Number(capacity) <= 0 || !Number.isInteger(Number(capacity))) {
-      res.status(400).json({ error: 'Total capacity must be a valid positive integer.' });
-      return;
-    }
-
-    const remainingSeats = availableSeats !== undefined ? Number(availableSeats) : Number(capacity);
-    if (isNaN(remainingSeats) || remainingSeats < 0 || remainingSeats > Number(capacity)) {
-      res.status(400).json({ error: 'Available seats must be a non-negative integer less than or equal to total capacity.' });
-      return;
-    }
-
-    // Check if Code already exists (analogous to SKU)
     const existingEvent = await prisma.event.findUnique({
       where: { code: String(code).toUpperCase() }
     });
 
     if (existingEvent) {
-      res.status(400).json({ error: `An event with Code '${code}' already exists.` });
+      res.status(400).json({ error: `Event with code '${code}' already exists.` });
       return;
     }
 
-    const event = await prisma.event.create({
+    const newEvent = await prisma.event.create({
       data: {
         name,
         code: String(code).toUpperCase(),
         category,
-        price: parseFloat(price),
-        capacity: parseInt(capacity, 10),
-        availableSeats: parseInt(String(remainingSeats), 10),
-        date,
+        price: eventPrice,
+        capacity: eventCapacity,
+        availableSeats: eventAvailableSeats,
+        date: new Date(date), // Expecting YYYY-MM-DD string
         time: time || '19:00',
         location,
         description: description || '',
         status,
-        organizerId: organizerId || null
-      }
+        createdById: createdById,
+        ticketTypes: {
+          create: ticketTypes.map((tt: any) => ({
+            name: tt.name,
+            price: parseFloat(String(tt.price)),
+            capacity: parseInt(String(tt.capacity), 10),
+            description: tt.description || ''
+          }))
+        }
+      },
+      include: { ticketTypes: true }
     });
 
-    res.status(201).json(event);
+    res.status(201).json(newEvent);
   } catch (error: any) {
     console.error('Error creating event:', error);
-    res.status(500).json({ error: 'Failed to create event', details: error.message });
+    res.status(500).json({ error: 'Failed to create event' });
   }
 });
 
 // PUT update event
-eventsRouter.put('/:id', async (req: Request, res: Response) => {
+eventsRouter.put('/:id', verifyToken, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { name, code, category, price, capacity, availableSeats, date, time, location, description, status, organizerId } = req.body;
+    const { name, code, category, price, capacity, availableSeats, date, time, location, description, status, createdById, ticketTypes } = req.body;
 
-    if (!name || !code || !category || price === undefined || capacity === undefined || !date || !location || !status) {
-      res.status(400).json({ error: 'All fields are required for update.' });
+    if (!name || !code || !category || price === undefined || capacity === undefined || !date || !location || !status || !createdById) {
+      res.status(400).json({ error: 'All required fields are missing for update.' });
       return;
     }
 
-    if (isNaN(Number(price)) || Number(price) < 0) {
-      res.status(400).json({ error: 'Ticket price must be a non-negative number.' });
+    const eventPrice = parseFloat(String(price));
+    const eventCapacity = parseInt(String(capacity), 10);
+    const eventAvailableSeats = availableSeats !== undefined ? parseInt(String(availableSeats), 10) : eventCapacity;
+
+    if (isNaN(eventPrice) || eventPrice < 0 || isNaN(eventCapacity) || eventCapacity <= 0) {
+      res.status(400).json({ error: 'Invalid price or capacity.' });
       return;
     }
 
-    if (isNaN(Number(capacity)) || Number(capacity) <= 0 || !Number.isInteger(Number(capacity))) {
-      res.status(400).json({ error: 'Total capacity must be a positive integer.' });
+    if (isNaN(eventAvailableSeats) || eventAvailableSeats < 0 || eventAvailableSeats > eventCapacity) {
+      res.status(400).json({ error: 'Invalid available seats.' });
       return;
     }
 
-    const remainingSeats = availableSeats !== undefined ? Number(availableSeats) : Number(capacity);
-    if (isNaN(remainingSeats) || remainingSeats < 0 || remainingSeats > Number(capacity)) {
-      res.status(400).json({ error: 'Available seats must be a non-negative integer less than or equal to total capacity.' });
-      return;
-    }
-
-    // Check if the event exists
     const currentEvent = await prisma.event.findUnique({
       where: { id }
     });
 
     if (!currentEvent) {
-      res.status(404).json({ error: 'Event to update was not found.' });
+      res.status(404).json({ error: 'Event not found.' });
       return;
     }
 
-    // Check if Code is changed and already exists on another event
     const normalizedCode = String(code).toUpperCase();
     if (normalizedCode !== currentEvent.code) {
       const codeCollision = await prisma.event.findUnique({
@@ -187,37 +221,49 @@ eventsRouter.put('/:id', async (req: Request, res: Response) => {
       }
     }
 
-    const event = await prisma.event.update({
+    // Update ticket types. This is a simplified approach, a more robust solution
+    // would handle adds, updates, and deletes for individual ticket types.
+    await prisma.ticketType.deleteMany({ where: { eventId: id } });
+    
+    const updatedEvent = await prisma.event.update({
       where: { id },
       data: {
         name,
         code: normalizedCode,
         category,
-        price: parseFloat(price),
-        capacity: parseInt(capacity, 10),
-        availableSeats: parseInt(String(remainingSeats), 10),
-        date,
+        price: eventPrice,
+        capacity: eventCapacity,
+        availableSeats: eventAvailableSeats,
+        date: new Date(date), // Expecting YYYY-MM-DD string
         time: time || '19:00',
         location,
         description: description || '',
         status,
-        organizerId: organizerId || null
-      }
+        createdById: createdById,
+        ticketTypes: {
+          create: ticketTypes.map((tt: any) => ({
+            name: tt.name,
+            price: parseFloat(String(tt.price)),
+            capacity: parseInt(String(tt.capacity), 10),
+            description: tt.description || ''
+          }))
+        }
+      },
+      include: { ticketTypes: true }
     });
 
-    res.json(event);
+    res.json(updatedEvent);
   } catch (error: any) {
     console.error('Error updating event:', error);
-    res.status(500).json({ error: 'Failed to update event', details: error.message });
+    res.status(500).json({ error: 'Failed to update event' });
   }
 });
 
 // DELETE event
-eventsRouter.delete('/:id', async (req: Request, res: Response) => {
+eventsRouter.delete('/:id', verifyToken, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    // Check existence
     const event = await prisma.event.findUnique({
       where: { id }
     });
@@ -227,6 +273,12 @@ eventsRouter.delete('/:id', async (req: Request, res: Response) => {
       return;
     }
 
+    // Delete related records first to avoid foreign key constraints
+    await prisma.bookingItem.deleteMany({ where: { booking: { eventId: id } } });
+    await prisma.booking.deleteMany({ where: { eventId: id } });
+    await prisma.review.deleteMany({ where: { eventId: id } });
+    await prisma.ticketType.deleteMany({ where: { eventId: id } });
+
     await prisma.event.delete({
       where: { id }
     });
@@ -234,37 +286,6 @@ eventsRouter.delete('/:id', async (req: Request, res: Response) => {
     res.json({ success: true, message: 'Event deleted successfully' });
   } catch (error: any) {
     console.error('Error deleting event:', error);
-    res.status(500).json({ error: 'Failed to delete event', details: error.message });
-  }
-});
-
-// POST seed initial mock event data
-eventsRouter.post('/seed', async (req: Request, res: Response) => {
-  try {
-    const count = await prisma.event.count();
-    if (count > 0) {
-      res.json({ message: 'Database already has records, seeding skipped.', count });
-      return;
-    }
-
-    const seedEvents = [
-      { name: 'Jakarta Jazz Festival 2026', code: 'JAZZ-JKT-2026', category: 'Music', price: 450000, capacity: 5000, availableSeats: 4850, date: '2026-09-12', time: '17:00', location: 'JIExpo Kemayoran, Jakarta', description: 'Experience the ultimate jazz gathering featuring world-class local and international jazz acts across multiple stages.', status: 'Active' },
-      { name: 'Bali Art & Pottery Workshop', code: 'ART-BALI-002', category: 'Arts & Crafts', price: 150000, capacity: 30, availableSeats: 12, date: '2026-07-28', time: '10:00', location: 'Ubud Creative Hub, Bali', description: 'Unleash your creativity and shape beautiful clay art mentored by Ubud\'s legendary master craftsmen.', status: 'Active' },
-      { name: 'Asia Pacific Developer Conference', code: 'CONF-DEV-2026', category: 'Technology', price: 950000, capacity: 1200, availableSeats: 1105, date: '2026-10-05', time: '09:00', location: 'Ritz-Carlton Mega Kuningan, JKT', description: 'Join leading cloud architects, web developers, and AI researchers to explore state-of-the-art tech frameworks.', status: 'Active' },
-      { name: 'Indonesian Culinary Festival', code: 'FOOD-RI-2026', category: 'Food & Culinary', price: 25000, capacity: 10000, availableSeats: 9800, date: '2026-08-17', time: '11:00', location: 'Gelora Bung Karno, Jakarta', description: 'Savor traditional culinary specialties, sambals, and traditional sweet beverages from all 38 Indonesian provinces.', status: 'Active' },
-      { name: 'Intimate Concert with Isyana Sarasvati', code: 'CONC-ISYANA-26', category: 'Music', price: 650000, capacity: 300, availableSeats: 0, date: '2026-08-01', time: '20:00', location: 'Nusa Indah Theatre, Jakarta', description: 'An exclusive neoclassical experience up close and personal with Indonesia\'s iconic multi-instrumentalist songstress.', status: 'Sold Out' },
-      { name: 'UI/UX Design Masterclass', code: 'WORK-UIUX-05', category: 'Workshop', price: 320000, capacity: 50, availableSeats: 8, date: '2026-07-20', time: '13:00', location: 'CoHive Kuningan, Jakarta', description: 'Develop wireframing techniques, typography layout rules, and dynamic prototyping skills using industry-standard tools.', status: 'Active' },
-      { name: 'Surabaya Half Marathon 2026', code: 'RUN-SUB-2026', category: 'Sports', price: 275000, capacity: 2500, availableSeats: 1200, date: '2026-11-08', time: '05:00', location: 'Bumi Surabaya, Surabaya', description: 'Race through historical routes of Surabaya in the crisp morning air with standard cheering stations and hydration support.', status: 'Active' },
-      { name: 'Private Coffee Cupping Session', code: 'WORK-COF-CUP', category: 'Workshop', price: 180000, capacity: 15, availableSeats: 15, date: '2026-07-15', time: '15:00', location: 'Prism Coffee Labs, Bandung', description: 'Learn to distinguish fine specialty coffee flavor notes including acidity, body, aroma, and aftertaste.', status: 'Draft' }
-    ];
-
-    await prisma.event.createMany({
-      data: seedEvents
-    });
-
-    res.json({ success: true, message: 'Database seeded successfully with premium events', count: seedEvents.length });
-  } catch (error: any) {
-    console.error('Error seeding database:', error);
-    res.status(500).json({ error: 'Failed to seed database', details: error.message });
+    res.status(500).json({ error: 'Failed to delete event' });
   }
 });

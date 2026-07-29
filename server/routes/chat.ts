@@ -1,105 +1,110 @@
 import { Router, Request, Response } from 'express';
-import { generateText } from 'ai';
-import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
-import { findChatEvents, ChatEvent } from '../neon.js';
-
-const openrouter = createOpenAICompatible({
-  name: 'openrouter',
-  baseURL: 'https://openrouter.ai/api/v1',
-  apiKey: process.env.OPENROUTER_API_KEY || '',
-  headers: { 'HTTP-Referer': 'https://eventkuy.app', 'X-Title': 'Event Kuy' },
-});
+import { prisma } from '../db.js';
 
 export const chatRouter = Router();
 
 type ChatMessage = { role: 'user' | 'assistant'; content: string };
 
-const systemPrompt = (events: ChatEvent[]) => `
-Anda adalah asisten virtual Event Kuy yang ramah, solutif, dan singkat.
-Tugas Anda membantu pengguna menemukan event yang cocok.
+async function searchEvents(userMessage: string) {
+  const term = userMessage.trim().slice(0, 200);
+  const lower = term.toLowerCase();
 
-Kumpulkan empat preferensi secara bertahap: kategori event, lokasi kota, jadwal/tanggal,
-dan anggaran biaya. Tanyakan hanya informasi yang masih belum diketahui.
+  const catIndo: Record<string, string> = {
+    musik: 'Music', konser: 'Music', band: 'Music',
+    teknologi: 'Technology', tech: 'Technology', developer: 'Technology',
+    seni: 'Arts & Crafts', batik: 'Arts & Crafts', wayang: 'Arts & Crafts', lukisan: 'Arts & Crafts',
+    kuliner: 'Food & Culinary', makanan: 'Food & Culinary', makan: 'Food & Culinary', kopi: 'Food & Culinary', food: 'Food & Culinary',
+    workshop: 'Workshop', kelas: 'Workshop', belajar: 'Workshop',
+    olahraga: 'Sports', lari: 'Sports', marathon: 'Sports', yoga: 'Sports', triathlon: 'Sports',
+  };
+  const catHints: string[] = [];
+  for (const [kata, cat] of Object.entries(catIndo)) {
+    if (lower.includes(kata) && !catHints.includes(cat)) catHints.push(cat);
+  }
+  for (const cat of ['Music', 'Technology', 'Arts & Crafts', 'Food & Culinary', 'Workshop', 'Sports']) {
+    if (lower.includes(cat.toLowerCase()) && !catHints.includes(cat)) catHints.push(cat);
+  }
 
-ATURAN DATA:
-- Anda hanya boleh merekomendasikan event pada DATA EVENT TERSEDIA di bawah.
-- Jangan mengarang nama, harga, tanggal, lokasi, status, atau ketersediaan event.
-- Jika DATA EVENT TERSEDIA kosong, katakan event yang cocok belum ditemukan dan tawarkan
-  pengguna untuk mengubah preferensi kategori, kota, tanggal, atau anggaran.
-- Jawaban harus dalam Bahasa Indonesia, langsung ke inti, dengan poin-poin.
-- Untuk setiap rekomendasi sebutkan nama, lokasi, tanggal, dan harga.
+  const cityMap: Record<string, string[]> = {
+    jakarta: ['Jakarta', 'Tangerang', 'Kuningan', 'SCBD', 'Kemayoran', 'Gelora'],
+    bandung: ['Bandung', 'ITB', 'Gasibu'],
+    surabaya: ['Surabaya', 'Tunjungan'],
+    bali: ['Bali', 'Ubud', 'Gianyar', 'Jimbaran', 'Seminyak'],
+    solo: ['Solo', 'Vastenburg'],
+    yogyakarta: ['Yogyakarta', 'Jogja', 'Magelang', 'Borobudur'],
+    pekalongan: ['Pekalongan'],
+  };
+  const locTerms: string[] = [];
+  for (const [key, vals] of Object.entries(cityMap)) {
+    if (lower.includes(key)) locTerms.push(...vals);
+  }
 
-DATA EVENT TERSEDIA:
-${JSON.stringify(events, null, 2)}
-`;
+  let maxPrice: number | undefined;
+  const priceMatch = term.match(/(?:di bawah|kurang dari|under|max|maksimal?)\s*([\d.,]+)/i);
+  if (priceMatch) maxPrice = parseInt(priceMatch[1].replace(/\./g, ''), 10);
+  if (lower.includes('gratis') || lower.includes('free')) maxPrice = 0;
 
-chatRouter.post('/', async (req: Request, res: Response) => {
+  const where: any = { status: 'Active', availableSeats: { gt: 0 } };
+
+  if (catHints.length > 0) where.category = { in: catHints };
+  if (locTerms.length > 0) {
+    where.OR = locTerms.map(loc => ({ location: { contains: loc, mode: 'insensitive' as const } }));
+  }
+  if (maxPrice !== undefined) where.price = { lte: maxPrice };
+
+  const stopWords = new Set(['cari', 'event', 'yang', 'di', 'dan', 'atau', 'saya', 'mau', 'ada', 'untuk', 'ini', 'itu', 'tolong']);
+  const words = term.split(/\s+/).filter(w => w.length > 2 && !stopWords.has(w));
+
+  if (words.length > 0) {
+    const textOR = words.flatMap(w => [
+      { name: { contains: w, mode: 'insensitive' as const } },
+      { description: { contains: w, mode: 'insensitive' as const } },
+      { location: { contains: w, mode: 'insensitive' as const } },
+    ]);
+    if (where.OR && where.OR.length > 0) {
+      where.AND = where.OR.map(() => ({ OR: textOR }));
+    } else {
+      where.OR = textOR;
+    }
+  }
+
+  return prisma.event.findMany({
+    where, orderBy: [{ date: 'asc' }], take: 8,
+    select: { id: true, name: true, category: true, price: true, date: true, time: true, location: true, description: true, availableSeats: true, status: true, code: true },
+  });
+}
+
+chatRouter.post('/', async (_req: Request, res: Response) => {
   try {
-    const messages = Array.isArray(req.body?.messages) ? req.body.messages : [];
-    const cleanMessages = messages
-      .filter((message: ChatMessage) =>
-        (message?.role === 'user' || message?.role === 'assistant') &&
-        typeof message.content === 'string' && message.content.trim(),
-      )
-      .slice(-10)
-      .map((message: ChatMessage) => ({ role: message.role, content: message.content.slice(0, 1200) }));
+    const messages = Array.isArray(_req.body?.messages) ? _req.body.messages : [];
+    const valid = messages.filter((m: ChatMessage) => (m?.role === 'user' || m?.role === 'assistant') && typeof m.content === 'string' && m.content.trim()).slice(-10);
+    const last = [...valid].reverse().find(m => m.role === 'user');
+    if (!last) return res.status(400).json({ error: 'Pesan pengguna wajib diisi.' });
 
-    const latestUserMessage = [...cleanMessages].reverse().find((message) => message.role === 'user');
-    if (!latestUserMessage) {
-      res.status(400).json({ error: 'Pesan pengguna wajib diisi.' });
-      return;
-    }
+    const events = await searchEvents(last.content);
+    const msg = events.length === 0
+      ? 'Maaf, tidak ada event yang cocok. Coba kata kunci lain!'
+      : buatRespon(events);
 
-    // Call Activepieces automation webhook
-    const activepiecesWebhookUrl = 'https://cloud.activepieces.com/api/v1/webhooks/wwJvcE9OLekCzbpBIvbEt';
-    try {
-      const response = await fetch(activepiecesWebhookUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: latestUserMessage.content,
-          messages: cleanMessages
-        })
-      });
-
-      if (response.ok) {
-        const text = await response.text();
-        let message = text;
-        let activepiecesEvents: ChatEvent[] = [];
-
-        try {
-          const data = JSON.parse(text);
-          if (data && typeof data === 'object') {
-            message = data.message || data.text || data.content || data.response || text;
-            if (Array.isArray(data.events)) {
-              activepiecesEvents = data.events;
-            }
-          }
-        } catch (e) {
-          // If response is not JSON, it's fine, we treat the raw text as the message.
-        }
-
-        res.json({ message, events: activepiecesEvents });
-        return;
-      } else {
-        console.warn(`[Chat] Activepieces webhook returned status ${response.status}. Falling back to local AI agent.`);
-      }
-    } catch (err) {
-      console.warn('[Chat] Activepieces webhook call failed. Falling back to local AI agent:', err);
-    }
-
-    // Local fallback
-    const events = await findChatEvents(latestUserMessage.content);
-    const result = await generateText({
-      model: openrouter(process.env.OPENROUTER_MODEL || 'openai/gpt-4o-mini'),
-      system: systemPrompt(events),
-      messages: cleanMessages,
-      temperature: 0.3,
-    });
-
-    res.json({ message: result.text, events });
-  } catch (error) {
-    console.error('[Chat] Failed:', error);
-    res.status(500).json({ error: 'Chatbot sedang tidak tersedia. Periksa konfigurasi database dan OpenAI.' });
+    res.json({ message: msg, events });
+  } catch {
+    res.status(500).json({ error: 'Chatbot sedang tidak tersedia. Coba lagi nanti.' });
   }
 });
+
+function buatRespon(events: any[]): string {
+  const cat = events[0]?.category;
+  const label: Record<string, string> = { Music: '🎵 musik', Technology: '💻 teknologi', 'Arts & Crafts': '🎨 seni', 'Food & Culinary': '🍜 kuliner', Workshop: '📚 workshop', Sports: '🏆 olahraga' };
+  const saran: Record<string, string> = { Music: '\n\n🎵 Coba juga "event musik di Bandung"!', Technology: '\n\n💻 Ada "startup weekend" juga!', 'Arts & Crafts': '\n\n🎨 Coba "batik pekalongan"!', 'Food & Culinary': '\n\n🍜 Cari "coffee festival"!', Workshop: '\n\n📚 Ada "UI/UX masterclass"!', Sports: '\n\n🏃 Coba "triathlon bali"!' };
+
+  const head = events.length === 1
+    ? 'Saya menemukan 1 event:'
+    : `Saya temukan ${events.length} event ${label[cat] || ''}:`;
+
+  const body = events.slice(0, 5).map((e, i) => {
+    const price = e.price === 0 ? 'GRATIS' : 'Rp ' + e.price.toLocaleString('id-ID');
+    return i + 1 + '. **' + e.name + '** — ' + e.location + ' — ' + new Date(e.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) + ' — ' + price;
+  }).join('\n');
+
+  return head + '\n\n' + body + (saran[cat] || '');
+}

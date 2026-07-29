@@ -77,12 +77,56 @@ import EventFormModal from './component/EventFormModal.js';
 import EventDetailsModal from './component/EventDetailsModal.js';
 import EventAssistantDock from './component/EventAssistantDock.js';
 
+// Confirmation Dialog Component
+function ConfirmationDialog({
+  isOpen,
+  title,
+  message,
+  onConfirm,
+  onCancel
+}: {
+  isOpen: boolean;
+  title: string;
+  message: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+      <div className="bg-white border-4 border-black p-6 max-w-md w-full shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+        <h3 className="text-lg font-black text-[#1a1a2e] mb-3">{title}</h3>
+        <p className="text-sm text-gray-600 mb-4">{message}</p>
+        <div className="flex justify-end space-x-2">
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 text-xs font-black border-2 border-gray-400 bg-white hover:bg-gray-100"
+          >
+            BATAL
+          </button>
+          <button
+            onClick={onConfirm}
+            className="px-4 py-2 text-xs font-black border-2 border-black bg-[#FF4757] text-white hover:bg-[#FF6B9D]"
+          >
+            YA, LANJUTKAN
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   // Authentication & Session State
-  const [currentUser, setCurrentUser] = useState<UserType | null>(() => {
-    const saved = localStorage.getItem('ephemeral_user');
-    return saved ? JSON.parse(saved) : null;
-  });
+  const savedSession = (() => {
+    try {
+      return JSON.parse(localStorage.getItem('ephemeral_user') || 'null');
+    } catch {
+      return null;
+    }
+  })();
+  const [currentUser, setCurrentUser] = useState<UserType | null>(savedSession ? { id: savedSession.id, name: savedSession.name, email: savedSession.email, role: savedSession.role, pointsBalance: savedSession.pointsBalance, referralCode: savedSession.referralCode || '' } : null);
+  const [authToken, setAuthToken] = useState<string | null>(savedSession?.token || null);
   const [userProfile, setUserProfile] = useState<{ pointRecords: PointRecord[]; coupons: Coupon[] } | null>(null);
 
   // AI assistant panel
@@ -168,14 +212,18 @@ export default function App() {
   const [isBooking, setIsBooking] = useState<boolean>(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
-
+  // Confirmation Dialog State
+  const [showConfirm, setShowConfirm] = useState<{
+    type: 'delete' | 'event' | 'book' | null;
+    payload?: any;
+  }>({ type: null });
 
   // 1. Debounce Search Bar Input
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearchQuery(searchQuery);
       setCurrentPage(1); // Reset page on new search
-    }, 4500); // 450ms debounce
+    }, 450); // 450ms debounce
     return () => clearTimeout(handler);
   }, [searchQuery]);
 
@@ -186,7 +234,7 @@ export default function App() {
 
   // 3. Fetch User profile metrics if logged in
   useEffect(() => {
-    if (currentUser) {
+    if (currentUser && authToken) {
       fetchUserProfile();
       fetchMyTransactions();
       if (currentUser.role === 'Organizer') {
@@ -195,8 +243,9 @@ export default function App() {
     } else {
       setUserProfile(null);
       setMyTransactions([]);
+      setDashboardStats(null);
     }
-  }, [currentUser]);
+  }, [currentUser, authToken]);
 
   // Fetch Events from backend with custom parameters
   const fetchEvents = async () => {
@@ -220,7 +269,6 @@ export default function App() {
       setTotalPages(data.totalPages || 1);
       setTotalCount(data.totalCount || 0);
     } catch (err: any) {
-      console.error(err);
       setError(err.message || 'An error occurred connecting to the server database.');
     } finally {
       setIsLoading(false);
@@ -229,38 +277,67 @@ export default function App() {
 
   // Fetch profile points & coupons
   const fetchUserProfile = async () => {
-    if (!currentUser) return;
-    try {
-      const res = await fetch(`/api/auth/profile/${currentUser.id}`);
-      if (res.ok) {
-        const data = await res.json();
-        setUserProfile({
-          pointRecords: data.pointRecords || [],
-          coupons: data.coupons || []
-        });
-        // Sync points count
-        if (data.user && data.user.pointsBalance !== currentUser.pointsBalance) {
-          const updatedUser = { ...currentUser, pointsBalance: data.user.pointsBalance };
-          setCurrentUser(updatedUser);
-          localStorage.setItem('ephemeral_user', JSON.stringify(updatedUser));
+      if (!currentUser) return;
+      try {
+        if (!authToken) {
+          console.error('fetchUserProfile: No auth token found, logging out.');
+          setCurrentUser(null);
+          setAuthToken(null);
+          return;
         }
+
+        const res = await fetch(`/api/auth/profile/${currentUser.id}`, {
+          headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+      
+        if (res.ok) {
+          const data = await res.json();
+          setUserProfile({
+            pointRecords: data.pointRecords || [],
+            coupons: data.coupons || []
+          });
+          if (data.user && data.user.pointsBalance !== currentUser.pointsBalance) {
+            setCurrentUser(prev => prev ? { ...prev, pointsBalance: data.user.pointsBalance } : null);
+          }
+        } else {
+          console.error('Failed to fetch user profile:', res.status);
+          if (res.status === 401 || res.status === 403) {
+            localStorage.removeItem('ephemeral_user');
+            setCurrentUser(null);
+            setAuthToken(null);
+          }
+        }
+      } catch (error) {
+        console.error('Error in fetchUserProfile:', error);
       }
-    } catch (error) {
-      console.error('Error loading user details:', error);
-    }
-  };
+    };
 
   // Fetch transactions of currently logged in buyer
   const fetchMyTransactions = async () => {
     if (!currentUser) return;
     try {
-      const res = await fetch(`/api/transactions?buyerId=${currentUser.id}`);
+      if (!authToken) {
+        console.error('fetchMyTransactions: No auth token found, logging out.');
+        setCurrentUser(null);
+        setAuthToken(null);
+        return;
+      }
+      const res = await fetch(`/api/transactions?buyerId=${currentUser.id}`, {
+        headers: { 'Authorization': `Bearer ${authToken}` }
+      });
       if (res.ok) {
         const data = await res.json();
         setMyTransactions(data);
+      } else {
+        console.error('Failed to fetch transactions:', res.status);
+        if (res.status === 401 || res.status === 403) {
+          localStorage.removeItem('ephemeral_user');
+          setCurrentUser(null);
+          setAuthToken(null);
+        }
       }
     } catch (error) {
-      console.error('Error fetching transactions:', error);
+      console.error('Error in fetchMyTransactions:', error);
     }
   };
 
@@ -269,13 +346,23 @@ export default function App() {
     if (!currentUser || currentUser.role !== 'Organizer') return;
     setStatsLoading(true);
     try {
-      const res = await fetch('/api/transactions/organizer/stats');
+      if (!authToken) {
+        console.error('fetchDashboardStats: No auth token found, logging out.');
+        setCurrentUser(null);
+        setAuthToken(null);
+        return;
+      }
+      const res = await fetch('/api/dashboard/stats/organizer', {
+        headers: { 'Authorization': `Bearer ${authToken}` }
+      });
       if (res.ok) {
         const data = await res.json();
         setDashboardStats(data);
+      } else {
+        console.error('Failed to fetch dashboard stats:', res.status);
       }
     } catch (error) {
-      console.error('Error fetching dashboard statistics:', error);
+      console.error('Error in fetchDashboardStats:', error);
     } finally {
       setStatsLoading(false);
     }
@@ -292,7 +379,7 @@ export default function App() {
         setReviewsStats(data.stats || { totalReviews: 0, averageRating: 0 });
       }
     } catch (error) {
-      console.error('Error loading reviews:', error);
+      // silently fail - error handled via UI toast
     } finally {
       setIsReviewsLoading(false);
     }
@@ -354,8 +441,9 @@ export default function App() {
 
       showToast('Registration complete! Welcome to Ephemeral Platform.');
       // Auto-login
+      localStorage.setItem('ephemeral_user', JSON.stringify({ ...data.user, token: data.token }));
       setCurrentUser(data.user);
-      localStorage.setItem('ephemeral_user', JSON.stringify(data.user));
+      setAuthToken(data.token || null);
       setIsAuthOpen(false);
       resetAuthFields();
     } catch (error: any) {
@@ -384,8 +472,9 @@ export default function App() {
         throw new Error(data.error || 'Login failed.');
       }
 
+      localStorage.setItem('ephemeral_user', JSON.stringify({ ...data.user, token: data.token }));
       setCurrentUser(data.user);
-      localStorage.setItem('ephemeral_user', JSON.stringify(data.user));
+      setAuthToken(data.token || null);
       showToast(`Welcome back, ${data.user.name}!`);
       setIsAuthOpen(false);
       resetAuthFields();
@@ -396,8 +485,9 @@ export default function App() {
 
   // Logout session
   const handleLogout = () => {
-    setCurrentUser(null);
     localStorage.removeItem('ephemeral_user');
+    setCurrentUser(null);
+    setAuthToken(null);
     showToast('Successfully logged out.');
     setActiveTab('explore');
   };
@@ -423,8 +513,8 @@ export default function App() {
     fetchEventReviews(event.id);
   };
 
-  // Check out Purchase Ticket
-  const handleBookTicket = async () => {
+  // Check out Purchase Ticket - with confirmation dialog
+  const handleBookTicket = () => {
     if (!currentUser) {
       setIsDetailsOpen(false);
       setAuthMode('login');
@@ -439,11 +529,29 @@ export default function App() {
       return;
     }
 
+    setShowConfirm({ type: 'book', payload: { event: selectedEvent } });
+  };
+
+  // Execute the booking after confirmation
+  const executeBooking = async () => {
+    if (!selectedEvent || !currentUser) return;
+    
+    const token = localStorage.getItem('ephemeral_user');
+    const userData = token ? JSON.parse(token) : null;
+    if (!token || !userData || !userData.id) {
+        showToast('Session expired. Please log in again.', 'error');
+        setIsAuthOpen(true);
+        return;
+    }
+
     setIsBooking(true);
     try {
       const res = await fetch('/api/transactions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${userData.token || localStorage.getItem('auth_token')}`
+        },
         body: JSON.stringify({
           eventId: selectedEvent.id,
           buyerId: currentUser.id,
@@ -457,7 +565,7 @@ export default function App() {
         throw new Error(data.error || 'Transaction failed.');
       }
 
-      showToast(`Booking Confirmed! Seat secured for "${selectedEvent.name}".`);
+      showToast(`Booking Created! Awaiting payment proof for "${selectedEvent.name}".`);
       setIsDetailsOpen(false);
 
       // Update local catalogs
@@ -468,6 +576,7 @@ export default function App() {
       showToast(error.message || 'Error occurred while booking ticket.', 'error');
     } finally {
       setIsBooking(false);
+      setShowConfirm({ type: null });
     }
   };
 
@@ -603,7 +712,10 @@ export default function App() {
       if (modalMode === 'create') {
         const res = await fetch('/api/events', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+          },
           body: JSON.stringify(payload)
         });
         const data = await res.json();
@@ -619,7 +731,10 @@ export default function App() {
       } else {
         const res = await fetch(`/api/events/${editingEventId}`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+          },
           body: JSON.stringify(payload)
         });
         const data = await res.json();
@@ -640,13 +755,15 @@ export default function App() {
     }
   };
 
-  // Delete event listing helper
-  const handleDeleteEvent = async (id: string, name: string, e: React.MouseEvent) => {
-    e.stopPropagation(); // Avoid card click
-    if (!window.confirm(`Are you sure you want to permanently cancel and remove the event listing: "${name}"?`)) {
-      return;
-    }
+  // Delete event listing helper - triggers confirmation dialog
+  const handleDeleteEvent = (id: string, name: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowConfirm({ type: 'delete', payload: { id, name } });
+  };
 
+  // Execute delete after confirmation
+  const executeDelete = async () => {
+    const { id, name } = showConfirm.payload!;
     try {
       const res = await fetch(`/api/events/${id}`, { method: 'DELETE' });
       const data = await res.json();
@@ -661,6 +778,8 @@ export default function App() {
       }
     } catch (err) {
       showToast('Connection to API server failed.', 'error');
+    } finally {
+      setShowConfirm({ type: null });
     }
   };
 
@@ -735,9 +854,19 @@ export default function App() {
 
   const checkoutPricing = getCheckoutPricing();
 
+  // Handle confirmation dialog actions
+  const handleConfirm = () => {
+    if (showConfirm.type === 'delete') {
+      executeDelete();
+    } else if (showConfirm.type === 'book') {
+      executeBooking();
+    }
+  };
+
   // ===================================================================
   // NEO-BRUTALISM RENDER
   // ===================================================================
+
   return (
     <div className="min-h-screen bg-[#FFFEF9] dot-grid-bg text-[#1a1a2e] flex flex-col font-sans selection:bg-[#FFD700]/40" id="app-root-container">
 
@@ -937,6 +1066,19 @@ export default function App() {
       {currentUser && (
         <EventAssistantDock isChatOpen={isChatOpen} setIsChatOpen={setIsChatOpen} />
       )}
+
+      {/* =================== CONFIRMATION DIALOG =================== */}
+      <ConfirmationDialog
+        isOpen={showConfirm.type !== null}
+        title={showConfirm.type === 'delete' ? 'HAPUS EVENT?' : 'PROMESIKAN PEMBELIAN?'}
+        message={
+          showConfirm.type === 'delete'
+            ? `Pasti hapus event "${showConfirm.payload?.name}"?`
+            : `Beli tiket untuk "${selectedEvent?.name}"?`
+        }
+        onConfirm={handleConfirm}
+        onCancel={() => setShowConfirm({ type: null })}
+      />
 
     </div>
   );

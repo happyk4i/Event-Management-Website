@@ -4,65 +4,56 @@ import { verifyToken, authorizeRoles, AuthenticatedUser } from '../auth.middlewa
 
 export const dashboardRouter = Router();
 
-// Rute Agregasi Statistik: Hanya boleh diakses jika sudah LOGIN DAN berstatus 'Organizer'
+// Get organizer statistics
 dashboardRouter.get('/stats/:organizerId', verifyToken, authorizeRoles('Organizer'), async (req: Request, res: Response) => {
   try {
     const { organizerId } = req.params;
-
-    // Ambil data user hasil decode dari token via Type Assertion (as)
     const currentUser = (req as any).user as AuthenticatedUser | undefined;
 
-    // Proteksi Ekstra: Cegah Organizer A mengintip data keuangan milik Organizer B
+    // Security check: prevent unauthorized access
     if (currentUser?.id !== organizerId) {
-      res.status(403).json({ error: 'Akses ditolak. Anda tidak berwenang melihat dashboard ini.' });
-      return;
+      return res.status(403).json({ error: 'Access denied. You cannot view this dashboard.' });
     }
 
-    // 1. Ambil semua event yang dibuat oleh Organizer ini beserta transaksi penjualan tiketnya
+    // Get all events created by this organizer
     const organizerEvents = await prisma.event.findMany({
-      where: { organizerId },
+      where: { createdById: organizerId },
       include: {
-        transactions: true // Menarik data riwayat pembelian tiket dari tabel Transaction
+        bookings: {
+          where: { status: 'confirmed' },
+          include: {
+            bookingItems: { include: { ticketType: true } }
+          }
+        }
       }
     });
 
-    // 2. Siapkan variabel penghitung statistik dasar
     let totalEvents = organizerEvents.length;
     let totalTicketsSold = 0;
     let totalRevenue = 0;
-
-    // Objek penampung sementara untuk mengelompokkan omset bulanan
     const monthlyDataMap: { [key: string]: number } = {};
 
-    // 3. Iterasi data dari Prisma untuk menghitung akumulasi omset keuangan
     organizerEvents.forEach(event => {
-      // Hitung total tiket terjual berdasarkan kapasitas yang berkurang
       const ticketsFromCapacity = event.capacity - event.availableSeats;
       if (ticketsFromCapacity > 0) {
         totalTicketsSold += ticketsFromCapacity;
       }
 
-      event.transactions.forEach(tx => {
-        totalRevenue += tx.finalPrice;
+      event.bookings.forEach(booking => {
+        totalRevenue += Number(booking.totalPrice);
 
-        // Ekstrak tahun-bulan dari purchaseDate (Format string Anda: YYYY-MM-DD)
-        // Contoh: "2026-07-15" dipotong menjadi "2026-07"
-        if (tx.purchaseDate && tx.purchaseDate.length >= 7) {
-          const yearMonth = tx.purchaseDate.substring(0, 7);
-          monthlyDataMap[yearMonth] = (monthlyDataMap[yearMonth] || 0) + tx.finalPrice;
-        }
+        const yearMonth = new Date(booking.bookedAt).toISOString().substring(0, 7);
+        monthlyDataMap[yearMonth] = (monthlyDataMap[yearMonth] || 0) + Number(booking.totalPrice);
       });
     });
 
-    // 4. Ubah struktur peta bulanan menjadi bentuk Array Objek agar ramah dibaca oleh library grafik (Recharts)
     const chartData = Object.keys(monthlyDataMap)
-      .sort() // Urutkan kronologis berdasarkan urutan bulan tertua ke terbaru
+      .sort()
       .map(monthStr => ({
-        month: monthStr, // Hasil contoh: "2026-07"
-        revenue: monthlyDataMap[monthStr] // Total omset bulan tersebut
+        month: monthStr,
+        revenue: monthlyDataMap[monthStr]
       }));
 
-    // 5. Kirimkan seluruh paket data visualisasi ke Front-end
     res.json({
       success: true,
       summary: {
@@ -70,11 +61,68 @@ dashboardRouter.get('/stats/:organizerId', verifyToken, authorizeRoles('Organize
         totalTicketsSold,
         totalRevenue
       },
-      chartData // Data krusial siap pakai untuk grafik bar/line chart
+      chartData
     });
-
   } catch (error: any) {
     console.error('Error fetching dashboard stats:', error);
-    res.status(500).json({ error: 'Gagal memuat data statistik dashboard.', details: error.message });
+    res.status(500).json({ error: 'Failed to load dashboard stats', details: error.message });
+  }
+});
+
+// Get user bookings
+dashboardRouter.get('/bookings/:userId', verifyToken, async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+    const currentUser = (req as any).user as AuthenticatedUser | undefined;
+
+    if (currentUser?.id !== userId && currentUser?.role !== 'Organizer') {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const bookings = await prisma.booking.findMany({
+      where: { userId },
+      include: {
+        event: true,
+        bookingItems: { include: { ticketType: true } },
+        voucher: true
+      },
+      orderBy: { bookedAt: 'desc' }
+    });
+
+    res.json(bookings);
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to fetch bookings' });
+  }
+});
+
+// Get event bookings (for organizers)
+dashboardRouter.get('/event-bookings/:eventId', verifyToken, authorizeRoles('Organizer'), async (req: Request, res: Response) => {
+  try {
+    const { eventId } = req.params;
+    const currentUser = (req as any).user as AuthenticatedUser | undefined;
+
+    // Verify event belongs to this organizer
+    const event = await prisma.event.findUnique({
+      where: { id: eventId },
+      select: { createdById: true }
+    });
+
+    if (!event || event.createdById !== currentUser?.id) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const bookings = await prisma.booking.findMany({
+      where: { eventId },
+      include: {
+        user: { select: { id: true, name: true, email: true } },
+        bookingItems: { include: { ticketType: true } },
+        voucher: true
+      },
+      orderBy: { bookedAt: 'desc' }
+    });
+
+    res.json(bookings);
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to fetch event bookings' });
   }
 });

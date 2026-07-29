@@ -35,7 +35,7 @@ export const Register: React.FC<RegisterPageProps> = ({ onRegisterSuccess, onNav
       }
 
       const data = await response.json();
-      localStorage.setItem('ephemeral_user', JSON.stringify(data.user));
+      localStorage.setItem('ephemeral_user', JSON.stringify({ ...data.user, token: data.token }));
       if (onRegisterSuccess) {
         onRegisterSuccess(data.user);
       } else {
@@ -62,7 +62,7 @@ export const Register: React.FC<RegisterPageProps> = ({ onRegisterSuccess, onNav
 
         {error && (
           <div className="mb-4 border-2 border-black bg-red-100 p-3 text-sm font-bold text-red-700">
-             {error}
+            {error}
           </div>
         )}
 

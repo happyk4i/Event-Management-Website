@@ -36,6 +36,10 @@ async function startServer() {
   const { reviewsRouter } = await import('./routes/reviews.js');
   app.use('/api/reviews', reviewsRouter);
 
+  // Bookings & Payment Verification endpoints
+  const { bookingsRouter } = await import('./routes/bookings.js');
+  app.use('/api/bookings', bookingsRouter);
+
   // Vite middleware integration for dynamic full-stack development
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({

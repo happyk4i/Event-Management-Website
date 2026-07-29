@@ -31,7 +31,7 @@ const Login: React.FC<LoginPageProps> = ({ onLoginSuccess, onNavigateToRegister 
       }
 
       const data = await response.json();
-      localStorage.setItem('ephemeral_user', JSON.stringify(data.user));
+      localStorage.setItem('ephemeral_user', JSON.stringify({ ...data.user, token: data.token }));
       if (onLoginSuccess) {
         onLoginSuccess(data.user);
       } else {
