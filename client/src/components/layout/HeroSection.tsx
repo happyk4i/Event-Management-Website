@@ -1,7 +1,7 @@
 import React, { Suspense } from 'react';
 import { Flame, Gift, Users } from 'lucide-react';
 
-const Scene3D = React.lazy(() => import('../Scene3D.js'));
+const Scene3D = React.lazy(() => import('../../utils/Scene3D'));
 
 type Props = {
   totalCount: number;

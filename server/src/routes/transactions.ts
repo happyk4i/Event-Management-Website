@@ -1,6 +1,7 @@
+
 import { Router, Request, Response } from 'express';
-import { prisma } from '../db.js';
-import { verifyToken } from '../auth.middleware.js';
+import { prisma } from '../config/db.ts';
+import { verifyToken } from '../middlewares/auth.middleware.ts';
 
 export const transactionsRouter = Router();
 

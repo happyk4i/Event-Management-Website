@@ -1,7 +1,7 @@
 import React from 'react';
 import { Calendar, MapPin, CalendarDays, Database, ShieldAlert, Loader2 } from 'lucide-react';
-import { CATEGORIES, Event } from '../../../types.js';
-import { formatRupiah } from '../utils/formatters.js';
+import { CATEGORIES, Event } from '../../../types';
+import { formatRupiah } from '../../../utils/formatters';
 
 type Props = {
   events: Event[];

@@ -1,4 +1,4 @@
-import { prisma } from '../db.js';
+import { prisma } from '../config/db.ts';
 
 export async function expireOldPendingBookings(): Promise<number> {
   const cutoff = new Date(Date.now() - 30 * 60 * 1000);

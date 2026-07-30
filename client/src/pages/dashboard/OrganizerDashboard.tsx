@@ -5,7 +5,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend
 } from 'recharts';
 import type { Event } from '../../types.js';
-import { formatRupiah } from '../utils/formatters.js';
+import { formatRupiah } from '../../utils/formatters';
 
 type Props = {
   dashboardStats: any;

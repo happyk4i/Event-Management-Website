@@ -1,7 +1,7 @@
 import React from 'react';
 import { X, Calendar, MapPin, Users, Star, Loader2 } from 'lucide-react';
 import type { Event, Review } from '../../types.js';
-import { formatRupiah } from '../utils/formatters.js';
+import { formatRupiah } from '../../utils/formatters';
 
 type Props = {
   isDetailsOpen: boolean;

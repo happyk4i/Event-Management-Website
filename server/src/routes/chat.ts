@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { prisma } from '../db.js';
+import { prisma } from '../config/db.ts';
 
 export const chatRouter = Router();
 

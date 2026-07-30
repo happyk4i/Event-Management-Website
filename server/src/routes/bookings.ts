@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
-import { prisma } from '../db.js';
-import { verifyToken, authorizeRoles } from '../auth.middleware.js';
+import { prisma } from '../config/db.ts';
+import { verifyToken, authorizeRoles } from '../middlewares/auth.middleware.ts';
 import { uploadImage, deleteImage, getSignedUrl } from '../utils/cloudinary.js';
 import multer from 'multer';
 
