@@ -60,24 +60,24 @@ import {
   Tooltip,
   Legend
 } from 'recharts';
-import { Event, CATEGORIES, STATUSES, User as UserType, Transaction, Review, Coupon, PointRecord } from './types.js';
-import ToastNotification from './component/ToastNotification.js';
-import TopMarquee from './component/TopMarquee.js';
-import MainNavigation from './component/MainNavigation.js';
-import HeroSection from './component/HeroSection.js';
-import ExpirationsWarning from './component/ExpirationsWarning.js';
-import CustomerRewardsPanel from './component/CustomerRewardsPanel.js';
-import EventFilters from './component/EventFilters.js';
-import EventCatalog from './component/EventCatalog.js';
-import Pagination from './component/Pagination.js';
-import OrganizerDashboard from './component/OrganizerDashboard.js';
-import CustomerBookings from './component/CustomerBookings.js';
-import PaymentReview from './component/PaymentReview.js';
-import Footer from './component/Footer.js';
-import AuthModal from './component/AuthModal.js';
-import EventFormModal from './component/EventFormModal.js';
-import EventDetailsModal from './component/EventDetailsModal.js';
-import EventAssistantDock from './component/EventAssistantDock.js';
+import { Event, CATEGORIES, STATUSES, User as UserType, Transaction, Review, Coupon, PointRecord } from './types';
+import ToastNotification from './components/ui/ToastNotification';
+import TopMarquee from './components/ui/TopMarquee';
+import MainNavigation from './components/layout/MainNavigation';
+import HeroSection from './components/layout/HeroSection';
+import ExpirationsWarning from './components/features/booking/ExpirationsWarning';
+import CustomerRewardsPanel from './components/features/reward/CustomerRewardsPanel';
+import EventFilters from './components/features/event/EventFilters';
+import EventCatalog from './components/features/event/EventCatalog';
+import Pagination from './components/ui/Pagination';
+import OrganizerDashboard from './pages/dashboard/OrganizerDashboard';
+import CustomerBookings from './components/features/booking/CustomerBookings';
+import PaymentReview from './components/features/booking/PaymentReview';
+import Footer from './components/ui/Footer';
+import AuthModal from './components/modals/AuthModal';
+import EventFormModal from './components/modals/EventFormModal';
+import EventDetailsModal from './components/modals/EventDetailsModal';
+import EventAssistantDock from './components/features/event/EventAssistantDock';
 
 
 function ConfirmDialog({ isOpen, title, message, onConfirm, onCancel, confirmText = 'Confirm', cancelText = 'Cancel', isDestructive = false }: any) {
@@ -269,40 +269,40 @@ export default function App() {
 
 
   const fetchUserProfile = async () => {
-      if (!currentUser) return;
-      try {
-        if (!authToken) {
-          console.error('fetchUserProfile: No auth token found, logging out.');
+    if (!currentUser) return;
+    try {
+      if (!authToken) {
+        console.error('fetchUserProfile: No auth token found, logging out.');
+        setCurrentUser(null);
+        setAuthToken(null);
+        return;
+      }
+
+      const res = await fetch(`/api/auth/profile/${currentUser.id}`, {
+        headers: { 'Authorization': `Bearer ${authToken}` }
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setUserProfile({
+          pointRecords: data.pointRecords || [],
+          coupons: data.coupons || []
+        });
+        if (data.user && data.user.pointsBalance !== currentUser.pointsBalance) {
+          setCurrentUser(prev => prev ? { ...prev, pointsBalance: data.user.pointsBalance } : null);
+        }
+      } else {
+        console.error('Failed to fetch user profile:', res.status);
+        if (res.status === 401 || res.status === 403) {
+          localStorage.removeItem('ephemeral_user');
           setCurrentUser(null);
           setAuthToken(null);
-          return;
         }
-
-        const res = await fetch(`/api/auth/profile/${currentUser.id}`, {
-          headers: { 'Authorization': `Bearer ${authToken}` }
-        });
-      
-        if (res.ok) {
-          const data = await res.json();
-          setUserProfile({
-            pointRecords: data.pointRecords || [],
-            coupons: data.coupons || []
-          });
-          if (data.user && data.user.pointsBalance !== currentUser.pointsBalance) {
-            setCurrentUser(prev => prev ? { ...prev, pointsBalance: data.user.pointsBalance } : null);
-          }
-        } else {
-          console.error('Failed to fetch user profile:', res.status);
-          if (res.status === 401 || res.status === 403) {
-            localStorage.removeItem('ephemeral_user');
-            setCurrentUser(null);
-            setAuthToken(null);
-          }
-        }
-      } catch (error) {
-        console.error('Error in fetchUserProfile:', error);
       }
-    };
+    } catch (error) {
+      console.error('Error in fetchUserProfile:', error);
+    }
+  };
 
 
   const fetchMyTransactions = async () => {
@@ -527,20 +527,20 @@ export default function App() {
 
   const executeBooking = async () => {
     if (!selectedEvent || !currentUser) return;
-    
+
     const token = localStorage.getItem('ephemeral_user');
     const userData = token ? JSON.parse(token) : null;
     if (!token || !userData || !userData.id) {
-        showToast('Session expired. Please log in again.', 'error');
-        setIsAuthOpen(true);
-        return;
+      showToast('Session expired. Please log in again.', 'error');
+      setIsAuthOpen(true);
+      return;
     }
 
     setIsBooking(true);
     try {
       const res = await fetch('/api/transactions', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${userData.token || localStorage.getItem('auth_token')}`
         },
@@ -704,7 +704,7 @@ export default function App() {
       if (modalMode === 'create') {
         const res = await fetch('/api/events', {
           method: 'POST',
-          headers: { 
+          headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
           },
@@ -723,7 +723,7 @@ export default function App() {
       } else {
         const res = await fetch(`/api/events/${editingEventId}`, {
           method: 'PUT',
-          headers: { 
+          headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
           },
@@ -860,13 +860,13 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#FFFEF9] dot-grid-bg text-[#1a1a2e] flex flex-col font-sans selection:bg-[#FFD700]/40" id="app-root-container">
 
-      {}
+      { }
       <ToastNotification toast={toast} onClose={() => setToast(null)} />
 
-      {}
+      { }
       <TopMarquee />
 
-      {}
+      { }
       <MainNavigation
         currentUser={currentUser}
         activeTab={activeTab}
@@ -876,23 +876,23 @@ export default function App() {
         handleLogout={handleLogout}
       />
 
-      {}
+      { }
       {activeTab === 'explore' && <HeroSection totalCount={totalCount} />}
 
-      {}
+      { }
       {currentUser && (
         <div className="max-w-7xl mx-auto w-full px-6 mt-6">
           <ExpirationsWarning userProfile={userProfile} />
         </div>
       )}
 
-      {}
+      { }
       <main className="flex-1 max-w-7xl w-full mx-auto p-6 space-y-8">
 
-        {}
+        { }
         {activeTab === 'explore' && (
           <div className="space-y-8" id="explore-panel">
-            {}
+            { }
             {currentUser && currentUser.role === 'Customer' && (
               <CustomerRewardsPanel
                 currentUser={currentUser}
@@ -904,7 +904,7 @@ export default function App() {
               />
             )}
 
-            {}
+            { }
             <EventFilters
               searchQuery={searchQuery}
               setSearchQuery={setSearchQuery}
@@ -922,7 +922,7 @@ export default function App() {
               setCurrentPage={setCurrentPage}
             />
 
-            {}
+            { }
             <EventCatalog
               events={events}
               viewMode={viewMode}
@@ -939,7 +939,7 @@ export default function App() {
               fetchEvents={fetchEvents}
             />
 
-            {}
+            { }
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
@@ -949,7 +949,7 @@ export default function App() {
           </div>
         )}
 
-        {}
+        { }
         {activeTab === 'dashboard' && currentUser?.role === 'Organizer' && (
           <OrganizerDashboard
             dashboardStats={dashboardStats}
@@ -963,22 +963,22 @@ export default function App() {
           />
         )}
 
-        {}
+        { }
         {activeTab === 'bookings' && authToken && (
           <CustomerBookings token={authToken} onToast={showToast} />
         )}
 
-        {}
+        { }
         {activeTab === 'payment-review' && authToken && currentUser && (currentUser.role === 'Organizer' || currentUser.role === 'Admin') && (
           <PaymentReview token={authToken} onToast={showToast} />
         )}
 
       </main>
 
-      {}
+      { }
       <Footer />
 
-      {}
+      { }
       <AuthModal
         isAuthOpen={isAuthOpen}
         setIsAuthOpen={setIsAuthOpen}
@@ -1000,7 +1000,7 @@ export default function App() {
         resetAuthFields={resetAuthFields}
       />
 
-      {}
+      { }
       <EventFormModal
         isModalOpen={isModalOpen}
         setIsModalOpen={setIsModalOpen}
@@ -1033,7 +1033,7 @@ export default function App() {
         isSubmitting={isSubmitting}
       />
 
-      {}
+      { }
       <EventDetailsModal
         isDetailsOpen={isDetailsOpen}
         selectedEvent={selectedEvent}
@@ -1062,12 +1062,12 @@ export default function App() {
         isBooking={isBooking}
       />
 
-      {}
+      { }
       {currentUser && (
         <EventAssistantDock isChatOpen={isChatOpen} setIsChatOpen={setIsChatOpen} />
       )}
 
-      {}
+      { }
       <ConfirmDialog
         isOpen={showConfirm.type !== null}
         title={showConfirm.type === 'delete' ? 'HAPUS EVENT?' : 'PROMESIKAN PEMBELIAN?'}

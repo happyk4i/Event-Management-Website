@@ -1,6 +1,6 @@
 import React from 'react';
 import { X, AlertCircle } from 'lucide-react';
-import { CATEGORIES, STATUSES } from '../types.js';
+import { CATEGORIES, STATUSES } from '../../types.js';
 
 type Props = {
   isModalOpen: boolean;

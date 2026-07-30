@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { Booking } from '../types.js';
+import type { Booking } from '../../../types.js';
 
 type Props = { token: string; onToast?: (message: string, type?: 'success' | 'error') => void };
 

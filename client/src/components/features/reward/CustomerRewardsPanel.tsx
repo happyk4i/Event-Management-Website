@@ -1,5 +1,5 @@
 import { Gift, Tag } from 'lucide-react';
-import type { User as UserType } from '../types.js';
+import type { User as UserType } from '../../../types.js';
 import { formatRupiah } from '../utils/formatters.js';
 
 type Props = {

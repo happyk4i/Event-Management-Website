@@ -1,6 +1,6 @@
 import React from 'react';
 import { X, Calendar, MapPin, Users, Star, Loader2 } from 'lucide-react';
-import type { Event, Review } from '../types.js';
+import type { Event, Review } from '../../types.js';
 import { formatRupiah } from '../utils/formatters.js';
 
 type Props = {

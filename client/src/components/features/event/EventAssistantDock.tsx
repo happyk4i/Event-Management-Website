@@ -1,5 +1,5 @@
 import { Sparkles } from 'lucide-react';
-import EventChat from './EventChat.js';
+import EventChat from '../chat/EventChat.js';
 
 type Props = {
   isChatOpen: boolean;

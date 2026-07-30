@@ -1,5 +1,5 @@
 import React from 'react';
-import { CATEGORIES, STATUSES } from '../types.js';
+import { CATEGORIES, STATUSES } from '../../../types.js';
 import { Search, Grid, RefreshCw } from 'lucide-react';
 
 type Props = {

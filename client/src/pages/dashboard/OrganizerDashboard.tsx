@@ -4,7 +4,7 @@ import {
   ResponsiveContainer, AreaChart, Area, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend
 } from 'recharts';
-import type { Event } from '../types.js';
+import type { Event } from '../../types.js';
 import { formatRupiah } from '../utils/formatters.js';
 
 type Props = {

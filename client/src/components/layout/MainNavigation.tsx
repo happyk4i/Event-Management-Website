@@ -1,5 +1,5 @@
 import { LogOut, Ticket, User } from 'lucide-react';
-import type { User as UserType } from '../types.js';
+import type { User as UserType } from '../../types.js';
 
 type Props = {
   currentUser: UserType | null;
