@@ -1,4 +1,5 @@
 import { v2 as cloudinary } from 'cloudinary';
+import { Readable } from 'stream';
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -31,7 +32,6 @@ export const uploadImage = async (
       }
     );
 
-    const { Readable } = require('stream');
     const readable = new Readable();
     readable.push(buffer);
     readable.push(null);

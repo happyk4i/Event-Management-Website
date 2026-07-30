@@ -26,7 +26,7 @@ export default function OrganizerDashboard({
       {}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-4 border-b-4 border-[#1a1a2e]">
         <div>
-          <h2 className="text-3xl font-black text-[#1a1a2e]">📊 Management Suite</h2>
+          <h2 className="text-3xl font-black text-[#1a1a2e]">Management Suite</h2>
           <p className="text-sm text-gray-500 mt-0.5 font-medium">Publish events, track sales, monitor revenue in real-time</p>
         </div>
         <button
@@ -42,17 +42,17 @@ export default function OrganizerDashboard({
       {dashboardStats ? (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
           <div className="bg-[#FFD700] nb-border-thick p-6 nb-shadow-lg nb-card-hover">
-            <span className="text-[10px] uppercase tracking-widest font-black text-[#1a1a2e]">💰 Total Revenue</span>
+            <span className="text-[10px] uppercase tracking-widest font-black text-[#1a1a2e]">Total Revenue</span>
             <h3 className="text-2xl font-black text-[#1a1a2e] mt-2">{formatRupiah(dashboardStats.summary?.totalSalesRevenue || 0)}</h3>
             <p className="text-xs font-bold flex items-center space-x-1 mt-2 text-[#1a1a2e]/70"><TrendingUp className="h-3.5 w-3.5 shrink-0" /><span>Verified payouts</span></p>
           </div>
           <div className="bg-[#FF6B9D] nb-border-thick p-6 nb-shadow-lg nb-card-hover">
-            <span className="text-[10px] uppercase tracking-widest font-black text-[#1a1a2e]">🎫 Tickets Sold</span>
+            <span className="text-[10px] uppercase tracking-widest font-black text-[#1a1a2e]">Tickets Sold</span>
             <h3 className="text-3xl font-black text-[#1a1a2e] mt-2">{dashboardStats.summary?.ticketsSold || 0}</h3>
             <p className="text-xs font-bold mt-2 text-[#1a1a2e]/70">Attendees registered</p>
           </div>
           <div className="bg-[#00D4FF] nb-border-thick p-6 nb-shadow-lg nb-card-hover">
-            <span className="text-[10px] uppercase tracking-widest font-black text-[#1a1a2e]">📅 Active Events</span>
+            <span className="text-[10px] uppercase tracking-widest font-black text-[#1a1a2e]">Active Events</span>
             <h3 className="text-3xl font-black text-[#1a1a2e] mt-2">{dashboardStats.summary?.activeEventsCount || 0}</h3>
             <p className="text-xs font-bold mt-2 text-[#1a1a2e]/70">Open for booking</p>
           </div>
@@ -60,7 +60,7 @@ export default function OrganizerDashboard({
       ) : (
         <div className="bg-white nb-border p-8 text-center nb-shadow">
           <Loader2 className="h-8 w-8 animate-spin mx-auto mb-3 text-[#FFD700]" />
-          <span className="text-sm font-bold text-gray-500">Computing analytics... 📊</span>
+          <span className="text-sm font-bold text-gray-500">Computing analytics...</span>
         </div>
       )}
 
@@ -87,7 +87,7 @@ export default function OrganizerDashboard({
         {dashboardStats && dashboardStats.reports ? (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             <div className="lg:col-span-8 space-y-2">
-              <span className="text-[10px] uppercase font-black tracking-widest text-gray-400 block">💰 Revenue Over Time</span>
+              <span className="text-[10px] uppercase font-black tracking-widest text-gray-400 block">Revenue Over Time</span>
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={dashboardStats.reports[statsRange] || []} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
@@ -107,7 +107,7 @@ export default function OrganizerDashboard({
               </div>
             </div>
             <div className="lg:col-span-4 space-y-2">
-              <span className="text-[10px] uppercase font-black tracking-widest text-gray-400 block">🎫 Ticket Volume</span>
+              <span className="text-[10px] uppercase font-black tracking-widest text-gray-400 block">Ticket Volume</span>
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={dashboardStats.reports[statsRange] || []} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
@@ -123,7 +123,7 @@ export default function OrganizerDashboard({
           </div>
         ) : (
           <div className="h-64 flex items-center justify-center bg-gray-50 nb-border">
-            <p className="text-sm text-gray-400 font-bold">No transaction data yet. Charts need ticket sales. 📈</p>
+            <p className="text-sm text-gray-400 font-bold">No transaction data yet. Charts need ticket sales.</p>
           </div>
         )}
       </div>
@@ -131,7 +131,7 @@ export default function OrganizerDashboard({
       {}
       <div className="bg-white nb-border p-6 nb-shadow space-y-4">
         <div className="flex items-center justify-between pb-3 border-b-3 border-[#1a1a2e]">
-          <span className="text-sm font-black uppercase tracking-wider text-[#1a1a2e]">📋 Your Managed Events</span>
+          <span className="text-sm font-black uppercase tracking-wider text-[#1a1a2e]">Your Managed Events</span>
           <span className="text-[10px] text-gray-400 font-mono font-bold">Edit/Remove from here</span>
         </div>
         <div className="overflow-x-auto">
@@ -160,14 +160,14 @@ export default function OrganizerDashboard({
                   </td>
                   <td className="py-3 px-4 text-right space-x-2">
                     <button onClick={(e) => openEditModal(ev, e)} className="text-[11px] font-black text-[#00D4FF] hover:text-[#FF6B9D] uppercase transition-colors">️ Edit</button>
-                    <button onClick={(e) => handleDeleteEvent(ev.id, ev.name, e)} className="text-[11px] font-black text-[#FF4757] hover:text-[#1a1a2e] uppercase transition-colors">🗑️ Remove</button>
+                    <button onClick={(e) => handleDeleteEvent(ev.id, ev.name, e)} className="text-[11px] font-black text-[#FF4757] hover:text-[#1a1a2e] uppercase transition-colors">Remove</button>
                   </td>
                 </tr>
               ))}
               {events.filter((e) => e.organizerId === currentUser?.id).length === 0 && (
                 <tr>
                   <td colSpan={6} className="py-10 text-center text-gray-400 font-bold">
-                    You haven't listed any events yet. Click "List New Event" to start! 🚀
+                    You haven't listed any events yet. Click "List New Event" to start!
                   </td>
                 </tr>
               )}

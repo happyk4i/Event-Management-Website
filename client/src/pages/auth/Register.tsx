@@ -142,7 +142,7 @@ export const Register: React.FC<RegisterPageProps> = ({ onRegisterSuccess, onNav
             disabled={isSubmitting}
             className="w-full bg-[#1d1b26] text-yellow-400 font-black py-3 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-2px active:translate-y-2px active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all disabled:opacity-50 flex items-center justify-center gap-2 text-base"
           >
-            {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : '🚀 DAFTAR AKUN'}
+            {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : 'DAFTAR AKUN'}
           </button>
         </form>
 

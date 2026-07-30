@@ -21,13 +21,13 @@ type Props = {
 
 const getCategoryIcon = (category: string) => {
   switch (category) {
-    case 'Music': return '🎵';
-    case 'Technology': return '💻';
-    case 'Arts & Crafts': return '🎨';
-    case 'Food & Culinary': return '🍜';
-    case 'Workshop': return '📚';
-    case 'Sports': return '🏆';
-    default: return '📌';
+    case 'Music': return '';
+    case 'Technology': return '';
+    case 'Arts & Crafts': return '';
+    case 'Food & Culinary': return '';
+    case 'Workshop': return '';
+    case 'Sports': return '';
+    default: return '';
   }
 };
 

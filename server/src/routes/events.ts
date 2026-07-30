@@ -157,14 +157,16 @@ eventsRouter.post('/', verifyToken, async (req: Request, res: Response) => {
         description: description || '',
         status,
         createdById: createdById,
-        ticketTypes: {
-          create: ticketTypes.map((tt: any) => ({
-            name: tt.name,
-            price: parseFloat(String(tt.price)),
-            capacity: parseInt(String(tt.capacity), 10),
-            description: tt.description || ''
-          }))
-        }
+        ...(Array.isArray(ticketTypes) && ticketTypes.length > 0 ? {
+          ticketTypes: {
+            create: ticketTypes.map((tt) => ({
+              name: tt.name,
+              price: parseFloat(String(tt.price)),
+              capacity: parseInt(String(tt.capacity), 10),
+              description: tt.description || ''
+            }))
+          }
+        } : {})
       },
       include: { ticketTypes: true }
     });

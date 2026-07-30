@@ -35,7 +35,7 @@ export default function EventFilters({
           <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
           <input
             type="text"
-            placeholder="🔍 Search events by title, SKU, or description..."
+            placeholder="Search events by title, SKU, or description..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="nb-input w-full pl-10 pr-12"
@@ -124,7 +124,7 @@ export default function EventFilters({
       {searchQuery !== debouncedSearchQuery && (
         <div className="text-[11px] font-mono font-bold text-[#FF6B9D] animate-pulse flex items-center space-x-2 pt-1">
           <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-          <span>⏳ Debouncing search query...</span>
+          <span>Debouncing search query...</span>
         </div>
       )}
     </div>
