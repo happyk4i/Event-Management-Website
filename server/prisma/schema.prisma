@@ -1,3 +1,6 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,90 +10,184 @@ datasource db {
 }
 
 model User {
-  id            String        @id @default(uuid())
-  name          String
-  email         String        @unique
-  password      String
-  role          String
-  referralCode  String        @unique
-  pointsBalance Int           @default(0)
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  Coupon        Coupon[]
-  Event         Event[]
-  PointRecord   PointRecord[]
-  Review        Review[]
-  Transaction   Transaction[]
+  id              String         @id @default(cuid())
+  email           String         @unique
+  password        String
+  name            String
+  role            String         @default("Customer") // "Customer", "Organizer", "Admin"
+  pointsBalance   Int            @default(0)
+  referralCode    String?        @unique
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  
+  createdEvents   Event[]        @relation("OrganizerEvents")
+  transactions    Transaction[]  @relation("BuyerTransactions")
+  reviews         Review[]
+  pointRecords    PointRecord[]
+  coupons         Coupon[]
+  sentInvitations UserInvitation[] @relation("UserSentInvitations")
+  receivedInvitations UserInvitation[] @relation("UserReceivedInvitations")
+  bookings        Booking[]
+  verifiedBookings Booking[]    @relation("VerifiedBookings")
 }
 
 model Event {
-  id             String        @id @default(uuid())
+  id             String      @id @default(cuid())
+  code           String      @unique @default(cuid())
   name           String
-  description    String        @default("")
-  code           String        @unique
+  description    String
+  price          Int         @default(0) // 0 for free events
   category       String
-  price          Float
+  location       String
+  date           DateTime
+  time           String
   capacity       Int
   availableSeats Int
-  date           String
-  time           String        @default("19:00")
-  location       String
-  status         String
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  organizerId    String?
-  User           User?         @relation(fields: [organizerId], references: [id])
-  Review         Review[]
+  status         String      @default("Active") // "Active", "Cancelled", "Sold Out", "Draft"
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  
+  createdById    String
+  createdBy      User        @relation("OrganizerEvents", fields: [createdById], references: [id])
+  
   transactions   Transaction[]
+  reviews        Review[]
+  ticketTypes    TicketType[]
+  bookings       Booking[]
 }
 
 model Transaction {
-  id              String   @id @default(uuid())
-  originalPrice   Float
-  discountApplied Float
-  finalPrice      Float
-  pointsUsed      Int      @default(0)
-  couponUsed      Boolean  @default(false)
-  purchaseDate    String
-  createdAt       DateTime @default(now())
-  eventName       String
-  buyerName       String
-  eventId         String
-  buyerId         String
-  User            User     @relation(fields: [buyerId], references: [id])
-  event           Event    @relation(fields: [eventId], references: [id])
+  id          String   @id @default(cuid())
+  eventId     String
+  buyerId     String
+  pricePaid   Int
+  pointsUsed  Int      @default(0)
+  couponUsedId String?
+  createdAt   DateTime @default(now())
+  
+  event       Event    @relation(fields: [eventId], references: [id])
+  buyer       User     @relation("BuyerTransactions", fields: [buyerId], references: [id])
+  couponUsed  Coupon?  @relation(fields: [couponUsedId], references: [id])
 }
 
 model Review {
-  id        String   @id @default(uuid())
-  userName  String
+  id        String   @id @default(cuid())
+  eventId   String
+  userId    String
   rating    Int
   feedback  String
   createdAt DateTime @default(now())
-  eventId   String
-  userId    String
-  Event     Event    @relation(fields: [eventId], references: [id])
-  User      User     @relation(fields: [userId], references: [id])
-}
-
-model PointRecord {
-  id         String   @id @default(uuid())
-  amount     Int
-  source     String
-  expiryDate String
-  isUsed     Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  userId     String
-  User       User     @relation(fields: [userId], references: [id])
+  
+  event     Event    @relation(fields: [eventId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 }
 
 model Coupon {
-  id         String   @id @default(uuid())
-  code       String
-  discount   Float
-  expiryDate String
-  isUsed     Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  userId     String
-  User       User     @relation(fields: [userId], references: [id])
+  id             String        @id @default(cuid())
+  code           String        @unique
+  discountAmount Int
+  minPurchase    Int           @default(0)
+  expiresAt      DateTime
+  isUsed         Boolean       @default(false)
+  userId         String?       // Optional: if coupon is user-specific
+  
+  user           User?         @relation(fields: [userId], references: [id])
+  transactions   Transaction[]
+}
+
+model PointRecord {
+  id        String   @id @default(cuid())
+  userId    String
+  points    Int
+  type      String   // "EARNED", "USED", "EXPIRED"
+  description String?
+  createdAt DateTime @default(now())
+  
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+// --- NEW MODELS FOR PROMOTION SYSTEM ---
+model TicketType {
+  id          String    @id @default(cuid())
+  eventId     String
+  name        String      // "VIP Pass", "General Entry", etc.
+  price       Decimal     @default(0.0) // 0 for free ticket types
+  capacity    Int         @default(0)
+  description String?
+  event       Event     @relation(fields: [eventId], references: [id])
+  bookingItems BookingItem[]
+}
+
+model Voucher {
+  id             String    @id @default(cuid())
+  code           String    @unique
+  type           String    // "percentage", "fixed", "early-bird", "referral"
+  discount       Decimal   @default(0.0)
+  minPurchase    Decimal   @default(0.0)
+  maxUses        Int       @default(1)
+  usedCount      Int       @default(0)
+  expiresAt      DateTime
+  maxPerUser     Int       @default(1)
+  applicableTo   String?   // null = all events
+  categoryOnly   String?   // null = all categories
+  createdAt      DateTime  @default(now())
+  
+  bookings       Booking[]
+}
+
+model UserInvitation {
+  id              String   @id @default(cuid())
+  inviterId       String
+  inviteeId       String?
+  email           String?
+  phoneNumber     String?
+  code            String   @unique
+  status          String   @default("pending") // pending, accepted, completed
+  expiresAt       DateTime
+  bookingId       String?  // reference to booking if used
+  createdAt       DateTime @default(now())
+  
+  inviter         User     @relation("UserSentInvitations", fields: [inviterId], references: [id])
+  invitee         User?    @relation("UserReceivedInvitations", fields: [inviteeId], references: [id])
+  booking         Booking? @relation(fields: [bookingId], references: [id])
+}
+
+model Booking {
+  id              String   @id @default(cuid())
+  eventId         String
+  userId          String
+  voucherCode     String?
+  voucherId       String?
+  appliedPoints   Int      @default(0)
+  totalPrice      Decimal  @default(0.0)
+  status          String   @default("pending") // pending, confirmed, cancelled
+  bookedAt        DateTime @default(now())
+  earlyBirdDiscount Decimal @default(0.0)
+
+  // --- PAYMENT VERIFICATION ---
+  paymentProofUrl       String?
+  paymentProofPublicId  String?
+  paymentStatus         String   @default("pending") // pending, uploaded, verified, rejected
+  verifiedByUserId      String?
+  verifiedAt            DateTime?
+  rejectReason          String?
+
+  event           Event    @relation(fields: [eventId], references: [id])
+  user            User     @relation(fields: [userId], references: [id])
+  voucher         Voucher? @relation(fields: [voucherId], references: [id])
+  bookingItems    BookingItem[]
+  userInvitation  UserInvitation[]
+  verifiedByUser  User?    @relation("VerifiedBookings", fields: [verifiedByUserId], references: [id])
+}
+
+model BookingItem {
+  id          String    @id @default(cuid())
+  bookingId   String
+  ticketTypeId String
+  quantity    Int
+  pricePerItem Decimal
+  subtotal    Decimal
+  
+  booking     Booking   @relation(fields: [bookingId], references: [id])
+  ticketType  TicketType @relation(fields: [ticketTypeId], references: [id])
 }

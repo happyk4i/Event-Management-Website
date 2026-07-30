@@ -60,35 +60,71 @@ import {
   Tooltip,
   Legend
 } from 'recharts';
-import { Event, CATEGORIES, STATUSES, User as UserType, Transaction, Review, Coupon, PointRecord } from './types.js';
-import ToastNotification from './component/ToastNotification.js';
-import TopMarquee from './component/TopMarquee.js';
-import MainNavigation from './component/MainNavigation.js';
-import HeroSection from './component/HeroSection.js';
-import ExpirationsWarning from './component/ExpirationsWarning.js';
-import CustomerRewardsPanel from './component/CustomerRewardsPanel.js';
-import EventFilters from './component/EventFilters.js';
-import EventCatalog from './component/EventCatalog.js';
-import Pagination from './component/Pagination.js';
-import OrganizerDashboard from './component/OrganizerDashboard.js';
-import Footer from './component/Footer.js';
-import AuthModal from './component/AuthModal.js';
-import EventFormModal from './component/EventFormModal.js';
-import EventDetailsModal from './component/EventDetailsModal.js';
-import EventAssistantDock from './component/EventAssistantDock.js';
+import { Event, CATEGORIES, STATUSES, User as UserType, Transaction, Review, Coupon, PointRecord } from './types';
+import ToastNotification from './components/ui/ToastNotification';
+import TopMarquee from './components/ui/TopMarquee';
+import MainNavigation from './components/layout/MainNavigation';
+import HeroSection from './components/layout/HeroSection';
+import ExpirationsWarning from './components/features/booking/ExpirationsWarning';
+import CustomerRewardsPanel from './components/features/reward/CustomerRewardsPanel';
+import EventFilters from './components/features/event/EventFilters';
+import EventCatalog from './components/features/event/EventCatalog';
+import Pagination from './components/ui/Pagination';
+import OrganizerDashboard from './pages/dashboard/OrganizerDashboard';
+import CustomerBookings from './components/features/booking/CustomerBookings';
+import PaymentReview from './components/features/booking/PaymentReview';
+import Footer from './components/ui/Footer';
+import AuthModal from './components/modals/AuthModal';
+import EventFormModal from './components/modals/EventFormModal';
+import EventDetailsModal from './components/modals/EventDetailsModal';
+import EventAssistantDock from './components/features/event/EventAssistantDock';
+
+
+function ConfirmDialog({ isOpen, title, message, onConfirm, onCancel, confirmText = 'Confirm', cancelText = 'Cancel', isDestructive = false }: any) {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+      <div className="bg-[#FFFEF9] w-full max-w-md nb-border nb-shadow animate-scale-in" onClick={e => e.stopPropagation()}>
+        <div className={`p-4 border-b-2 border-[#1a1a2e] ${isDestructive ? 'bg-[#FF6B9D]' : 'bg-[#FFD700]'}`}>
+          <h3 className="font-black text-xl text-[#1a1a2e] flex items-center gap-2">
+            {isDestructive ? <ShieldAlert className="w-6 h-6" /> : <HelpCircle className="w-6 h-6" />}
+            {title}
+          </h3>
+        </div>
+        <div className="p-6">
+          <p className="text-[#1a1a2e] font-medium mb-6 text-lg">{message}</p>
+          <div className="flex justify-end gap-4">
+            <button onClick={onCancel} className="nb-btn px-6 py-2.5 bg-white text-[#1a1a2e] hover:bg-gray-100">
+              {cancelText}
+            </button>
+            <button onClick={onConfirm} className={`nb-btn px-6 py-2.5 text-[#1a1a2e] ${isDestructive ? 'bg-[#FF6B9D] hover:bg-[#ff4d88]' : 'bg-[#7CFC00] hover:bg-[#6be000]'}`}>
+              {confirmText}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function App() {
-  // Authentication & Session State
-  const [currentUser, setCurrentUser] = useState<UserType | null>(() => {
-    const saved = localStorage.getItem('ephemeral_user');
-    return saved ? JSON.parse(saved) : null;
-  });
+
+
+  const savedSession = (() => {
+    try {
+      return JSON.parse(localStorage.getItem('ephemeral_user') || 'null');
+    } catch {
+      return null;
+    }
+  })();
+  const [currentUser, setCurrentUser] = useState<UserType | null>(savedSession ? { id: savedSession.id, name: savedSession.name, email: savedSession.email, role: savedSession.role, pointsBalance: savedSession.pointsBalance, referralCode: savedSession.referralCode || '' } : null);
+  const [authToken, setAuthToken] = useState<string | null>(savedSession?.token || null);
   const [userProfile, setUserProfile] = useState<{ pointRecords: PointRecord[]; coupons: Coupon[] } | null>(null);
 
-  // AI assistant panel
+
   const [isChatOpen, setIsChatOpen] = useState(false);
 
-  // Core Event Lists & Pagination States
+
   const [events, setEvents] = useState<Event[]>([]);
   const [totalCount, setTotalCount] = useState<number>(0);
   const [totalPages, setTotalPages] = useState<number>(1);
@@ -96,20 +132,20 @@ export default function App() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Layout View Mode State (grid or list)
+
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
-  // Filter States
+
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [selectedStatus, setSelectedStatus] = useState<string>('All');
   const [selectedLocation, setSelectedLocation] = useState<string>('');
 
-  // Active View Tab ('explore' | 'dashboard')
-  const [activeTab, setActiveTab] = useState<'explore' | 'dashboard'>('explore');
 
-  // Auth Card Modals / Views
+  const [activeTab, setActiveTab] = useState<'explore' | 'dashboard' | 'bookings' | 'payment-review'>('explore');
+
+
   const [isAuthOpen, setIsAuthOpen] = useState<boolean>(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [authName, setAuthName] = useState<string>('');
@@ -119,30 +155,30 @@ export default function App() {
   const [authReferredBy, setAuthReferredBy] = useState<string>('');
   const [authError, setAuthError] = useState<string | null>(null);
 
-  // Event Creation & Update Modal
+
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
 
-  // Event Details Modal & Checkout
+
   const [isDetailsOpen, setIsDetailsOpen] = useState<boolean>(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [selectedEventReviews, setSelectedEventReviews] = useState<Review[]>([]);
   const [reviewsStats, setReviewsStats] = useState<{ totalReviews: number; averageRating: number }>({ totalReviews: 0, averageRating: 0 });
   const [isReviewsLoading, setIsReviewsLoading] = useState<boolean>(false);
 
-  // Ticket checkout settings
+
   const [applyCouponId, setApplyCouponId] = useState<string>('');
   const [redeemPoints, setRedeemPoints] = useState<boolean>(false);
   const [pointsToUseInput, setPointsToUseInput] = useState<number>(0);
 
-  // Event Feedback State
+
   const [userRating, setUserRating] = useState<number>(5);
   const [userFeedback, setUserFeedback] = useState<string>('');
   const [feedbackError, setFeedbackError] = useState<string | null>(null);
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState<boolean>(false);
 
-  // Form Fields State for Event Creator
+
   const [formName, setFormName] = useState<string>('');
   const [formDescription, setFormDescription] = useState<string>('');
   const [formCode, setFormCode] = useState<string>('');
@@ -156,37 +192,41 @@ export default function App() {
   const [formStatus, setFormStatus] = useState<string>(STATUSES[0]);
   const [formError, setFormError] = useState<string | null>(null);
 
-  // Transaction Lists & Stats
+
   const [dashboardStats, setDashboardStats] = useState<any>(null);
   const [statsRange, setStatsRange] = useState<'daily' | 'monthly' | 'yearly'>('daily');
   const [statsLoading, setStatsLoading] = useState<boolean>(false);
   const [myTransactions, setMyTransactions] = useState<Transaction[]>([]);
 
-  // Interactive UI indicators
+
   const [isSeeding, setIsSeeding] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isBooking, setIsBooking] = useState<boolean>(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
 
+  const [showConfirm, setShowConfirm] = useState<{
+    type: 'delete' | 'event' | 'book' | null;
+    payload?: any;
+  }>({ type: null });
 
-  // 1. Debounce Search Bar Input
+
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearchQuery(searchQuery);
-      setCurrentPage(1); // Reset page on new search
-    }, 4500); // 450ms debounce
+      setCurrentPage(1);
+    }, 450);
     return () => clearTimeout(handler);
   }, [searchQuery]);
 
-  // 2. Fetch Events when filters, search queries, or page changes
+
   useEffect(() => {
     fetchEvents();
   }, [debouncedSearchQuery, selectedCategory, selectedStatus, selectedLocation, currentPage]);
 
-  // 3. Fetch User profile metrics if logged in
+
   useEffect(() => {
-    if (currentUser) {
+    if (currentUser && authToken) {
       fetchUserProfile();
       fetchMyTransactions();
       if (currentUser.role === 'Organizer') {
@@ -195,10 +235,11 @@ export default function App() {
     } else {
       setUserProfile(null);
       setMyTransactions([]);
+      setDashboardStats(null);
     }
-  }, [currentUser]);
+  }, [currentUser, authToken]);
 
-  // Fetch Events from backend with custom parameters
+
   const fetchEvents = async () => {
     setIsLoading(true);
     setError(null);
@@ -220,68 +261,106 @@ export default function App() {
       setTotalPages(data.totalPages || 1);
       setTotalCount(data.totalCount || 0);
     } catch (err: any) {
-      console.error(err);
       setError(err.message || 'An error occurred connecting to the server database.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Fetch profile points & coupons
+
   const fetchUserProfile = async () => {
     if (!currentUser) return;
     try {
-      const res = await fetch(`/api/auth/profile/${currentUser.id}`);
+      if (!authToken) {
+        console.error('fetchUserProfile: No auth token found, logging out.');
+        setCurrentUser(null);
+        setAuthToken(null);
+        return;
+      }
+
+      const res = await fetch(`/api/auth/profile/${currentUser.id}`, {
+        headers: { 'Authorization': `Bearer ${authToken}` }
+      });
+
       if (res.ok) {
         const data = await res.json();
         setUserProfile({
           pointRecords: data.pointRecords || [],
           coupons: data.coupons || []
         });
-        // Sync points count
         if (data.user && data.user.pointsBalance !== currentUser.pointsBalance) {
-          const updatedUser = { ...currentUser, pointsBalance: data.user.pointsBalance };
-          setCurrentUser(updatedUser);
-          localStorage.setItem('ephemeral_user', JSON.stringify(updatedUser));
+          setCurrentUser(prev => prev ? { ...prev, pointsBalance: data.user.pointsBalance } : null);
+        }
+      } else {
+        console.error('Failed to fetch user profile:', res.status);
+        if (res.status === 401 || res.status === 403) {
+          localStorage.removeItem('ephemeral_user');
+          setCurrentUser(null);
+          setAuthToken(null);
         }
       }
     } catch (error) {
-      console.error('Error loading user details:', error);
+      console.error('Error in fetchUserProfile:', error);
     }
   };
 
-  // Fetch transactions of currently logged in buyer
+
   const fetchMyTransactions = async () => {
     if (!currentUser) return;
     try {
-      const res = await fetch(`/api/transactions?buyerId=${currentUser.id}`);
+      if (!authToken) {
+        console.error('fetchMyTransactions: No auth token found, logging out.');
+        setCurrentUser(null);
+        setAuthToken(null);
+        return;
+      }
+      const res = await fetch(`/api/transactions?buyerId=${currentUser.id}`, {
+        headers: { 'Authorization': `Bearer ${authToken}` }
+      });
       if (res.ok) {
         const data = await res.json();
         setMyTransactions(data);
+      } else {
+        console.error('Failed to fetch transactions:', res.status);
+        if (res.status === 401 || res.status === 403) {
+          localStorage.removeItem('ephemeral_user');
+          setCurrentUser(null);
+          setAuthToken(null);
+        }
       }
     } catch (error) {
-      console.error('Error fetching transactions:', error);
+      console.error('Error in fetchMyTransactions:', error);
     }
   };
 
-  // Fetch organizer statistics for chart dashboard
+
   const fetchDashboardStats = async () => {
     if (!currentUser || currentUser.role !== 'Organizer') return;
     setStatsLoading(true);
     try {
-      const res = await fetch('/api/transactions/organizer/stats');
+      if (!authToken) {
+        console.error('fetchDashboardStats: No auth token found, logging out.');
+        setCurrentUser(null);
+        setAuthToken(null);
+        return;
+      }
+      const res = await fetch('/api/dashboard/stats/organizer', {
+        headers: { 'Authorization': `Bearer ${authToken}` }
+      });
       if (res.ok) {
         const data = await res.json();
         setDashboardStats(data);
+      } else {
+        console.error('Failed to fetch dashboard stats:', res.status);
       }
     } catch (error) {
-      console.error('Error fetching dashboard statistics:', error);
+      console.error('Error in fetchDashboardStats:', error);
     } finally {
       setStatsLoading(false);
     }
   };
 
-  // Load reviews for the selected event details
+
   const fetchEventReviews = async (eventId: string) => {
     setIsReviewsLoading(true);
     try {
@@ -292,13 +371,13 @@ export default function App() {
         setReviewsStats(data.stats || { totalReviews: 0, averageRating: 0 });
       }
     } catch (error) {
-      console.error('Error loading reviews:', error);
+
     } finally {
       setIsReviewsLoading(false);
     }
   };
 
-  // Display floating notification
+
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToast({ message, type });
     setTimeout(() => {
@@ -306,7 +385,7 @@ export default function App() {
     }, 4500);
   };
 
-  // Seed Event Records Helper
+
   const handleSeedDatabase = async () => {
     setIsSeeding(true);
     try {
@@ -325,7 +404,7 @@ export default function App() {
     }
   };
 
-  // Perform Register
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError(null);
@@ -353,9 +432,10 @@ export default function App() {
       }
 
       showToast('Registration complete! Welcome to Ephemeral Platform.');
-      // Auto-login
+
+      localStorage.setItem('ephemeral_user', JSON.stringify({ ...data.user, token: data.token }));
       setCurrentUser(data.user);
-      localStorage.setItem('ephemeral_user', JSON.stringify(data.user));
+      setAuthToken(data.token || null);
       setIsAuthOpen(false);
       resetAuthFields();
     } catch (error: any) {
@@ -363,7 +443,7 @@ export default function App() {
     }
   };
 
-  // Perform Login
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError(null);
@@ -384,8 +464,9 @@ export default function App() {
         throw new Error(data.error || 'Login failed.');
       }
 
+      localStorage.setItem('ephemeral_user', JSON.stringify({ ...data.user, token: data.token }));
       setCurrentUser(data.user);
-      localStorage.setItem('ephemeral_user', JSON.stringify(data.user));
+      setAuthToken(data.token || null);
       showToast(`Welcome back, ${data.user.name}!`);
       setIsAuthOpen(false);
       resetAuthFields();
@@ -394,10 +475,11 @@ export default function App() {
     }
   };
 
-  // Logout session
+
   const handleLogout = () => {
-    setCurrentUser(null);
     localStorage.removeItem('ephemeral_user');
+    setCurrentUser(null);
+    setAuthToken(null);
     showToast('Successfully logged out.');
     setActiveTab('explore');
   };
@@ -411,7 +493,7 @@ export default function App() {
     setAuthError(null);
   };
 
-  // View Details Model Loader
+
   const handleOpenDetails = (event: Event) => {
     setSelectedEvent(event);
     setApplyCouponId('');
@@ -423,8 +505,8 @@ export default function App() {
     fetchEventReviews(event.id);
   };
 
-  // Check out Purchase Ticket
-  const handleBookTicket = async () => {
+
+  const handleBookTicket = () => {
     if (!currentUser) {
       setIsDetailsOpen(false);
       setAuthMode('login');
@@ -439,11 +521,29 @@ export default function App() {
       return;
     }
 
+    setShowConfirm({ type: 'book', payload: { event: selectedEvent } });
+  };
+
+
+  const executeBooking = async () => {
+    if (!selectedEvent || !currentUser) return;
+
+    const token = localStorage.getItem('ephemeral_user');
+    const userData = token ? JSON.parse(token) : null;
+    if (!token || !userData || !userData.id) {
+      showToast('Session expired. Please log in again.', 'error');
+      setIsAuthOpen(true);
+      return;
+    }
+
     setIsBooking(true);
     try {
       const res = await fetch('/api/transactions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${userData.token || localStorage.getItem('auth_token')}`
+        },
         body: JSON.stringify({
           eventId: selectedEvent.id,
           buyerId: currentUser.id,
@@ -457,10 +557,10 @@ export default function App() {
         throw new Error(data.error || 'Transaction failed.');
       }
 
-      showToast(`Booking Confirmed! Seat secured for "${selectedEvent.name}".`);
+      showToast(`Booking Created! Awaiting payment proof for "${selectedEvent.name}".`);
       setIsDetailsOpen(false);
 
-      // Update local catalogs
+
       fetchEvents();
       fetchUserProfile();
       fetchMyTransactions();
@@ -468,10 +568,11 @@ export default function App() {
       showToast(error.message || 'Error occurred while booking ticket.', 'error');
     } finally {
       setIsBooking(false);
+      setShowConfirm({ type: null });
     }
   };
 
-  // Submit Feedback Review
+
   const handleSubmitFeedback = async (e: React.FormEvent) => {
     e.preventDefault();
     setFeedbackError(null);
@@ -512,7 +613,7 @@ export default function App() {
     }
   };
 
-  // Open Event Creation Modal
+
   const openCreateModal = () => {
     setModalMode('create');
     setEditingEventId(null);
@@ -534,7 +635,7 @@ export default function App() {
   };
 
   const openEditModal = (event: Event, e: React.MouseEvent) => {
-    e.stopPropagation(); // Avoid triggering card details click
+    e.stopPropagation();
     setModalMode('edit');
     setEditingEventId(event.id);
     setFormName(event.name);
@@ -552,12 +653,12 @@ export default function App() {
     setIsModalOpen(true);
   };
 
-  // Submit Listing Event
+
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
 
-    // Form validation
+
     if (!formName.trim()) {
       setFormError('Please enter a descriptive Event Name.');
       return;
@@ -603,7 +704,10 @@ export default function App() {
       if (modalMode === 'create') {
         const res = await fetch('/api/events', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+          },
           body: JSON.stringify(payload)
         });
         const data = await res.json();
@@ -619,7 +723,10 @@ export default function App() {
       } else {
         const res = await fetch(`/api/events/${editingEventId}`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+          },
           body: JSON.stringify(payload)
         });
         const data = await res.json();
@@ -640,13 +747,15 @@ export default function App() {
     }
   };
 
-  // Delete event listing helper
-  const handleDeleteEvent = async (id: string, name: string, e: React.MouseEvent) => {
-    e.stopPropagation(); // Avoid card click
-    if (!window.confirm(`Are you sure you want to permanently cancel and remove the event listing: "${name}"?`)) {
-      return;
-    }
 
+  const handleDeleteEvent = (id: string, name: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowConfirm({ type: 'delete', payload: { id, name } });
+  };
+
+
+  const executeDelete = async () => {
+    const { id, name } = showConfirm.payload!;
     try {
       const res = await fetch(`/api/events/${id}`, { method: 'DELETE' });
       const data = await res.json();
@@ -661,10 +770,12 @@ export default function App() {
       }
     } catch (err) {
       showToast('Connection to API server failed.', 'error');
+    } finally {
+      setShowConfirm({ type: null });
     }
   };
 
-  // Event SKU code generator
+
   const handleAutoGenerateCode = () => {
     if (!formName) {
       setFormError('Type an Event Title first to generate a structured SKU code.');
@@ -689,26 +800,26 @@ export default function App() {
     setFormCode(`${prefix}-${yearPart}-${randCode}`);
   };
 
-  // Verification if buyer has purchased ticket to display review box
+
   const hasPurchasedSelectedEvent = () => {
     if (!currentUser) return false;
     if (!selectedEvent) return false;
     return myTransactions.some((t: { eventId: any; }) => t.eventId === selectedEvent.id);
   };
 
-  // Calculations for checkout summary
+
   const getCheckoutPricing = () => {
     if (!selectedEvent) return { originalPrice: 0, earlyBird: 0, coupon: 0, points: 0, finalPrice: 0 };
     let orig = selectedEvent.price;
 
-    // Date-based 5% early bird discount (if scheduled date > 30 days out)
+
     let earlyBird = 0;
     const daysOut = (new Date(selectedEvent.date).getTime() - new Date().getTime()) / (1000 * 3600 * 24);
     if (daysOut > 30 && orig > 0) {
       earlyBird = orig * 0.05;
     }
 
-    // Selected coupon deduction (10% on remaining)
+
     let couponDeduction = 0;
     if (applyCouponId && userProfile) {
       const matchedCoupon = userProfile.coupons.find((c: { id: any; }) => c.id === applyCouponId);
@@ -717,7 +828,7 @@ export default function App() {
       }
     }
 
-    // Points deduction (1 point = 1 IDR)
+
     let maxPointsAllowed = Math.max(0, orig - earlyBird - couponDeduction);
     let ptsUsed = 0;
     if (redeemPoints && currentUser) {
@@ -735,19 +846,27 @@ export default function App() {
 
   const checkoutPricing = getCheckoutPricing();
 
-  // ===================================================================
-  // NEO-BRUTALISM RENDER
-  // ===================================================================
+
+  const handleConfirm = () => {
+    if (showConfirm.type === 'delete') {
+      executeDelete();
+    } else if (showConfirm.type === 'book') {
+      executeBooking();
+    }
+  };
+
+
+
   return (
     <div className="min-h-screen bg-[#FFFEF9] dot-grid-bg text-[#1a1a2e] flex flex-col font-sans selection:bg-[#FFD700]/40" id="app-root-container">
 
-      {/* =================== TOAST NOTIFICATION =================== */}
+      { }
       <ToastNotification toast={toast} onClose={() => setToast(null)} />
 
-      {/* =================== MARQUEE TOP BANNER =================== */}
+      { }
       <TopMarquee />
 
-      {/* =================== NAVIGATION HEADER =================== */}
+      { }
       <MainNavigation
         currentUser={currentUser}
         activeTab={activeTab}
@@ -757,23 +876,23 @@ export default function App() {
         handleLogout={handleLogout}
       />
 
-      {/* =================== HERO SECTION WITH 3D =================== */}
+      { }
       {activeTab === 'explore' && <HeroSection totalCount={totalCount} />}
 
-      {/* Expirations Warning */}
+      { }
       {currentUser && (
         <div className="max-w-7xl mx-auto w-full px-6 mt-6">
           <ExpirationsWarning userProfile={userProfile} />
         </div>
       )}
 
-      {/* =================== MAIN CONTAINER =================== */}
+      { }
       <main className="flex-1 max-w-7xl w-full mx-auto p-6 space-y-8">
 
-        {/* =================== VIEW 1: EXPLORE CATALOG =================== */}
+        { }
         {activeTab === 'explore' && (
           <div className="space-y-8" id="explore-panel">
-            {/* Customer Points & Voucher widget */}
+            { }
             {currentUser && currentUser.role === 'Customer' && (
               <CustomerRewardsPanel
                 currentUser={currentUser}
@@ -785,7 +904,7 @@ export default function App() {
               />
             )}
 
-            {/* Filter, Search & Location */}
+            { }
             <EventFilters
               searchQuery={searchQuery}
               setSearchQuery={setSearchQuery}
@@ -803,7 +922,7 @@ export default function App() {
               setCurrentPage={setCurrentPage}
             />
 
-            {/* =================== EVENT CARDS =================== */}
+            { }
             <EventCatalog
               events={events}
               viewMode={viewMode}
@@ -820,7 +939,7 @@ export default function App() {
               fetchEvents={fetchEvents}
             />
 
-            {/* =================== PAGINATION =================== */}
+            { }
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
@@ -830,7 +949,7 @@ export default function App() {
           </div>
         )}
 
-        {/* =================== VIEW 2: ORGANIZER DASHBOARD =================== */}
+        { }
         {activeTab === 'dashboard' && currentUser?.role === 'Organizer' && (
           <OrganizerDashboard
             dashboardStats={dashboardStats}
@@ -844,12 +963,22 @@ export default function App() {
           />
         )}
 
+        { }
+        {activeTab === 'bookings' && authToken && (
+          <CustomerBookings token={authToken} onToast={showToast} />
+        )}
+
+        { }
+        {activeTab === 'payment-review' && authToken && currentUser && (currentUser.role === 'Organizer' || currentUser.role === 'Admin') && (
+          <PaymentReview token={authToken} onToast={showToast} />
+        )}
+
       </main>
 
-      {/* =================== FOOTER =================== */}
+      { }
       <Footer />
 
-      {/* =================== AUTH MODAL =================== */}
+      { }
       <AuthModal
         isAuthOpen={isAuthOpen}
         setIsAuthOpen={setIsAuthOpen}
@@ -871,7 +1000,7 @@ export default function App() {
         resetAuthFields={resetAuthFields}
       />
 
-      {/* =================== EVENT CREATE/EDIT MODAL =================== */}
+      { }
       <EventFormModal
         isModalOpen={isModalOpen}
         setIsModalOpen={setIsModalOpen}
@@ -904,7 +1033,7 @@ export default function App() {
         isSubmitting={isSubmitting}
       />
 
-      {/* =================== EVENT DETAILS + CHECKOUT MODAL =================== */}
+      { }
       <EventDetailsModal
         isDetailsOpen={isDetailsOpen}
         selectedEvent={selectedEvent}
@@ -933,10 +1062,23 @@ export default function App() {
         isBooking={isBooking}
       />
 
-      {/* =================== EVENT ASSISTANT DOCK =================== */}
+      { }
       {currentUser && (
         <EventAssistantDock isChatOpen={isChatOpen} setIsChatOpen={setIsChatOpen} />
       )}
+
+      { }
+      <ConfirmDialog
+        isOpen={showConfirm.type !== null}
+        title={showConfirm.type === 'delete' ? 'HAPUS EVENT?' : 'PROMESIKAN PEMBELIAN?'}
+        message={
+          showConfirm.type === 'delete'
+            ? `Pasti hapus event "${showConfirm.payload?.name}"?`
+            : `Beli tiket untuk "${selectedEvent?.name}"?`
+        }
+        onConfirm={handleConfirm}
+        onCancel={() => setShowConfirm({ type: null })}
+      />
 
     </div>
   );

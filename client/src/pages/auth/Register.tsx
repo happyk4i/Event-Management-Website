@@ -35,7 +35,7 @@ export const Register: React.FC<RegisterPageProps> = ({ onRegisterSuccess, onNav
       }
 
       const data = await response.json();
-      localStorage.setItem('ephemeral_user', JSON.stringify(data.user));
+      localStorage.setItem('ephemeral_user', JSON.stringify({ ...data.user, token: data.token }));
       if (onRegisterSuccess) {
         onRegisterSuccess(data.user);
       } else {
@@ -51,7 +51,7 @@ export const Register: React.FC<RegisterPageProps> = ({ onRegisterSuccess, onNav
   return (
     <div className="min-h-screen bg-[#2c2440] flex items-center justify-center p-4">
       <div className="w-full max-w-md border-4 border-black bg-white p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] text-black">
-        {/* Header */}
+        {}
         <div className="text-center mb-6">
           <span className="bg-yellow-400 px-3 py-1 text-sm font-black border-2 border-black inline-block shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
             EVENT KUY
@@ -62,7 +62,7 @@ export const Register: React.FC<RegisterPageProps> = ({ onRegisterSuccess, onNav
 
         {error && (
           <div className="mb-4 border-2 border-black bg-red-100 p-3 text-sm font-bold text-red-700">
-             {error}
+            {error}
           </div>
         )}
 
