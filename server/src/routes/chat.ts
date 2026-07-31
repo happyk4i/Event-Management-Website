@@ -94,8 +94,8 @@ chatRouter.post('/', async (_req: Request, res: Response) => {
 
 function buatRespon(events: any[]): string {
   const cat = events[0]?.category;
-  const label: Record<string, string> = { Music: '🎵 musik', Technology: '💻 teknologi', 'Arts & Crafts': '🎨 seni', 'Food & Culinary': '🍜 kuliner', Workshop: '📚 workshop', Sports: '🏆 olahraga' };
-  const saran: Record<string, string> = { Music: '\n\n🎵 Coba juga "event musik di Bandung"!', Technology: '\n\n💻 Ada "startup weekend" juga!', 'Arts & Crafts': '\n\n🎨 Coba "batik pekalongan"!', 'Food & Culinary': '\n\n🍜 Cari "coffee festival"!', Workshop: '\n\n📚 Ada "UI/UX masterclass"!', Sports: '\n\n🏃 Coba "triathlon bali"!' };
+  const label: Record<string, string> = { Music: 'musik', Technology: 'teknologi', 'Arts & Crafts': 'seni', 'Food & Culinary': 'kuliner', Workshop: 'workshop', Sports: 'olahraga' };
+  const saran: Record<string, string> = { Music: '\n\nCoba juga "event musik di Bandung"!', Technology: '\n\nAda "startup weekend" juga!', 'Arts & Crafts': '\n\nCoba "batik pekalongan"!', 'Food & Culinary': '\n\nCari "coffee festival"!', Workshop: '\n\nAda "UI/UX masterclass"!', Sports: '\n\nCoba "triathlon bali"!' };
 
   const head = events.length === 1
     ? 'Saya menemukan 1 event:'

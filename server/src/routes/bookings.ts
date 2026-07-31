@@ -268,6 +268,7 @@ bookingsRouter.get(
 
       const result = bookings.map((b) => ({
         ...b,
+        paymentDeadline: new Date(b.bookedAt.getTime() + 30 * 60 * 1000).toISOString(),
         paymentProofUrl: b.paymentProofPublicId ? getSignedUrl(b.paymentProofPublicId) : null,
         paymentProofPublicId: undefined,
       }));
@@ -294,14 +295,42 @@ bookingsRouter.get('/my', verifyToken, async (req: Request, res: Response) => {
       orderBy: { bookedAt: 'desc' },
     });
 
-    const result = bookings.map((b) => ({
-      ...b,
-      paymentProofUrl:
-        b.paymentProofPublicId && (b.paymentStatus === 'uploaded' || b.paymentStatus === 'verified')
-          ? getSignedUrl(b.paymentProofPublicId)
-          : null,
-      paymentProofPublicId: undefined,
-    }));
+    const now = Date.now();
+    const deadlineMs = 30 * 60 * 1000;
+
+    const result = await Promise.all(
+      bookings.map(async (b) => {
+        const paymentDeadline = new Date(b.bookedAt.getTime() + deadlineMs).toISOString();
+
+        if (
+          b.paymentStatus === 'pending' &&
+          b.status !== 'cancelled' &&
+          new Date(b.bookedAt).getTime() + deadlineMs < now
+        ) {
+          try {
+            await cancelBookingAtomically(b.id, 'expired');
+          } catch (_) {  }
+          return {
+            ...b,
+            paymentDeadline,
+            status: 'cancelled',
+            paymentStatus: 'expired',
+            paymentProofUrl: null,
+            paymentProofPublicId: undefined,
+          };
+        }
+
+        return {
+          ...b,
+          paymentDeadline,
+          paymentProofUrl:
+            b.paymentProofPublicId && (b.paymentStatus === 'uploaded' || b.paymentStatus === 'verified')
+              ? getSignedUrl(b.paymentProofPublicId)
+              : null,
+          paymentProofPublicId: undefined,
+        };
+      })
+    );
 
     res.json(result);
   } catch (error: any) {

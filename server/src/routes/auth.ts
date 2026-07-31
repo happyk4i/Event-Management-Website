@@ -64,7 +64,7 @@ authRouter.post('/register', async (req: Request, res: Response) => {
 
     res.status(201).json({
       message: 'Registration successful!',
-      user: { id: user.id, name: user.name, email: user.email, role: user.role, pointsBalance: user.pointsBalance },
+      user: { id: user.id, name: user.name, email: user.email, role: user.role, pointsBalance: user.pointsBalance, referralCode: user.referralCode },
       token
     });
   } catch (error) {
@@ -92,7 +92,7 @@ authRouter.post('/login', async (req: Request, res: Response) => {
 
     res.json({
       message: 'Login successful!',
-      user: { id: user.id, name: user.name, email: user.email, role: user.role, pointsBalance: user.pointsBalance },
+      user: { id: user.id, name: user.name, email: user.email, role: user.role, pointsBalance: user.pointsBalance, referralCode: user.referralCode },
       token
     });
   } catch (error) {

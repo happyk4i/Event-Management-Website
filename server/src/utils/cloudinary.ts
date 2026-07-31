@@ -1,4 +1,5 @@
 import { v2 as cloudinary } from 'cloudinary';
+import { Readable } from 'stream';
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -11,16 +12,14 @@ cloudinary.config({
 
 export const uploadImage = async (
   buffer: Buffer,
-  _folder: string,
+  folder: string,
   _mimetype: string
 ): Promise<{ url: string; publicId: string }> => {
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
       {
-        folder: 'eventkuy/payment-proofs',
+        folder,
         resource_type: 'image',
-        type: 'authenticated',
-
       },
       (error, result) => {
         if (error || !result) {
@@ -31,7 +30,6 @@ export const uploadImage = async (
       }
     );
 
-    const { Readable } = require('stream');
     const readable = new Readable();
     readable.push(buffer);
     readable.push(null);

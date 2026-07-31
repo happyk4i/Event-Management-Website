@@ -11,6 +11,8 @@ export interface Event {
   time: string;
   location: string;
   status: string;
+  imageUrl?: string;
+  imagePublicId?: string;
   organizerId?: string | null;
   createdAt?: string;
   updatedAt?: string;

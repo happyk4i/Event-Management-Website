@@ -27,19 +27,21 @@ type Props = {
   pointsToUseInput: number;
   setPointsToUseInput: (n: number) => void;
   checkoutPricing: { originalPrice: number; earlyBird: number; coupon: number; points: number; finalPrice: number };
-  handleBookTicket: () => void;
-  isBooking: boolean;
-};
+    handleBookTicket: () => void;
+    isBooking: boolean;
+    quantity: number;
+    setQuantity: (n: number) => void;
+  };
 
 const getCategoryIcon = (category: string) => {
   switch (category) {
-    case 'Music': return '🎵';
-    case 'Technology': return '💻';
-    case 'Arts & Crafts': return '🎨';
-    case 'Food & Culinary': return '🍜';
-    case 'Workshop': return '📚';
-    case 'Sports': return '🏆';
-    default: return '📌';
+    case 'Music': return '';
+    case 'Technology': return '';
+    case 'Arts & Crafts': return '';
+    case 'Food & Culinary': return '';
+    case 'Workshop': return '';
+    case 'Sports': return '';
+    default: return '';
   }
 };
 
@@ -59,7 +61,8 @@ export default function EventDetailsModal({
   isDetailsOpen, selectedEvent, setIsDetailsOpen, reviewsStats, selectedEventReviews, isReviewsLoading,
   hasPurchasedSelectedEvent, handleSubmitFeedback, userRating, setUserRating, userFeedback, setUserFeedback,
   feedbackError, isSubmittingFeedback, currentUser, userProfile, applyCouponId, setApplyCouponId,
-  redeemPoints, setRedeemPoints, pointsToUseInput, setPointsToUseInput, checkoutPricing, handleBookTicket, isBooking
+  redeemPoints, setRedeemPoints, pointsToUseInput, setPointsToUseInput, checkoutPricing, handleBookTicket, isBooking,
+  quantity, setQuantity
 }: Props) {
   if (!isDetailsOpen || !selectedEvent) return null;
   return (
@@ -69,10 +72,21 @@ export default function EventDetailsModal({
           <X className="h-4 w-4" />
         </button>
 
-        {}
-        <div className="md:col-span-7 p-6 space-y-5">
-          <div className="h-2 -mx-6 -mt-6 mb-4 bg-[#FF6B9D]" />
-          <div className="space-y-2">
+        {/* Left panel — event info */}
+                <div className="md:col-span-7 p-6 space-y-5">
+                  {selectedEvent.imageUrl ? (
+                    <div className="-mx-6 -mt-6 mb-4">
+                      <img
+                        src={selectedEvent.imageUrl}
+                        alt={selectedEvent.name}
+                        className="w-full h-48 object-cover border-b-3 border-[#1a1a2e]"
+                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                      />
+                    </div>
+                  ) : (
+                    <div className="h-2 -mx-6 -mt-6 mb-4 bg-[#FF6B9D]" />
+                  )}
+                  <div className="space-y-2">
             <span className={`text-[10px] font-black uppercase tracking-wider px-3 py-1.5 border-2 ${getCategoryColor(selectedEvent.category)} inline-flex items-center space-x-1`}>
               <span>{getCategoryIcon(selectedEvent.category)}</span>
               <span>{selectedEvent.category}</span>
@@ -97,9 +111,9 @@ export default function EventDetailsModal({
           </div>
 
           <div className="space-y-1.5">
-            <span className="text-[10px] uppercase tracking-widest font-black text-gray-400 block">📄 About</span>
+            <span className="text-[10px] uppercase tracking-widest font-black text-gray-400 block">About</span>
             <p className="text-xs text-gray-600 leading-relaxed bg-gray-50 p-4 nb-border border-2 font-medium">
-              {selectedEvent.description || 'An upcoming premium event scheduled on the platform. Purchase tickets early for early bird pricing! 🎉'}
+              {selectedEvent.description || 'An upcoming premium event scheduled on the platform. Purchase tickets early for early bird pricing!'}
             </p>
           </div>
 
@@ -123,7 +137,7 @@ export default function EventDetailsModal({
                 <span className="text-[10px] font-bold">Loading reviews...</span>
               </div>
             ) : selectedEventReviews.length === 0 ? (
-              <p className="text-xs text-gray-400 font-bold italic">No reviews yet for this event. 📝</p>
+              <p className="text-xs text-gray-400 font-bold italic">No reviews yet for this event.</p>
             ) : (
               <div className="space-y-3 max-h-48 overflow-y-auto pr-2">
                 {selectedEventReviews.map((r) => (
@@ -181,16 +195,34 @@ export default function EventDetailsModal({
         {}
         <div className="md:col-span-5 bg-[#1a1a2e] border-l-4 border-[#FFD700] p-5 space-y-5 flex flex-col justify-between">
           <div className="space-y-4">
-            <span className="text-[10px] uppercase tracking-widest font-black text-[#FFD700] block border-b-2 border-[#FFD700]/30 pb-2">🎟️ Ticket Checkout</span>
+            <span className="text-[10px] uppercase tracking-widest font-black text-[#FFD700] block border-b-2 border-[#FFD700]/30 pb-2">Ticket Checkout</span>
             <div className="bg-[#FFD700] p-4 nb-border border-2 space-y-1">
               <span className="text-[9px] uppercase tracking-wider font-black text-[#1a1a2e]">Standard Price</span>
               <h4 className="text-xl font-black text-[#1a1a2e]">
-                {selectedEvent.price === 0 ? 'FREE REGISTRATION 🎉' : formatRupiah(selectedEvent.price)}
+                {selectedEvent.price === 0 ? 'FREE REGISTRATION' : formatRupiah(selectedEvent.price)}
               </h4>
               {selectedEvent.price > 0 && <p className="text-[10px] text-[#1a1a2e]/70 font-bold">* 5% early-bird discount if booked 30+ days ahead</p>}
             </div>
 
-            {selectedEvent.price > 0 && currentUser && currentUser.role === 'Customer' && (
+                        {/* Quantity stepper */}
+                        <div className="flex items-center justify-between bg-white/10 p-3 border-2 border-[#FFD700]/30">
+                          <span className="text-xs font-black text-white">Quantity</span>
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                              className="nb-btn w-8 h-8 bg-[#FFD700] text-[#1a1a2e] text-sm font-black"
+                              disabled={quantity <= 1}
+                            >-</button>
+                            <span className="text-sm font-black text-[#FFD700] w-8 text-center">{quantity}</span>
+                            <button
+                              onClick={() => setQuantity(Math.min(selectedEvent.availableSeats, quantity + 1))}
+                              className="nb-btn w-8 h-8 bg-[#FFD700] text-[#1a1a2e] text-sm font-black"
+                              disabled={quantity >= selectedEvent.availableSeats}
+                            >+</button>
+                          </div>
+                        </div>
+
+                        {selectedEvent.price > 0 && currentUser && currentUser.role === 'Customer' && (
               <div className="space-y-3">
                 {userProfile?.coupons && userProfile.coupons.length > 0 && (
                   <div className="bg-white/10 p-3.5 border-2 border-[#FFD700]/30 space-y-2">
@@ -201,7 +233,7 @@ export default function EventDetailsModal({
                         onChange={(e) => setApplyCouponId(e.target.checked ? userProfile.coupons[0].id : '')}
                         className="h-4 w-4 accent-[#FFD700]"
                       />
-                      <span className="text-xs font-black text-white">🎟️ Apply Welcome Coupon</span>
+                      <span className="text-xs font-black text-white">Apply Welcome Coupon</span>
                     </label>
                     <p className="text-[9px] text-gray-400 pl-6 font-bold">Extra 10% off at checkout</p>
                   </div>
@@ -219,7 +251,7 @@ export default function EventDetailsModal({
                         }}
                         className="h-4 w-4 accent-[#FFD700]"
                       />
-                      <span className="text-xs font-black text-white">💰 Redeem Points</span>
+                      <span className="text-xs font-black text-white">Redeem Points</span>
                     </label>
                     {redeemPoints && (
                       <div className="space-y-1 pl-6">
@@ -256,7 +288,7 @@ export default function EventDetailsModal({
             disabled={isBooking || selectedEvent.availableSeats <= 0}
             className={`w-full py-3.5 nb-btn text-sm ${selectedEvent.availableSeats <= 0 ? 'bg-gray-600 text-gray-400 cursor-not-allowed border-gray-500' : 'bg-[#FFD700] text-[#1a1a2e] animate-pulse-glow'}`}
           >
-            {isBooking ? '⏳ Processing...' : selectedEvent.availableSeats <= 0 ? '🚫 SOLD OUT' : '🎫 Confirm & Purchase Ticket'}
+            {isBooking ? 'Processing...' : selectedEvent.availableSeats <= 0 ? 'SOLD OUT' : `Confirm & Purchase ${quantity} Ticket${quantity > 1 ? 's' : ''}`}
           </button>
         </div>
       </div>

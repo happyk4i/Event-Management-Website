@@ -7,7 +7,8 @@ export const transactionsRouter = Router();
 
 
 transactionsRouter.post('/', verifyToken, async (req: Request, res: Response) => {
-  const { eventId, buyerId, useCouponId, usePointsAmount } = req.body;
+  const { eventId, buyerId, quantity: rawQty, useCouponId, usePointsAmount } = req.body;
+  const quantity = Math.max(1, Math.min(Number(rawQty) || 1, 100));
 
   if (!eventId || !buyerId) {
     return res.status(400).json({ error: 'Event ID and Buyer ID are required.' });
@@ -17,12 +18,12 @@ transactionsRouter.post('/', verifyToken, async (req: Request, res: Response) =>
     const result = await prisma.$transaction(async (tx) => {
       const event = await tx.event.findUnique({ where: { id: eventId } });
       if (!event) throw new Error('Event not found.');
-      if (event.availableSeats <= 0) throw new Error('This event is sold out.');
+      if (event.availableSeats < quantity) throw new Error(`Only ${event.availableSeats} seats available.`);
 
       const buyer = await tx.user.findUnique({ where: { id: buyerId } });
       if (!buyer) throw new Error('Buyer not found.');
 
-      let finalPrice = event.price;
+      let finalPrice = event.price * quantity;
       let pointsDeducted = 0;
       let couponUsed = null;
 
@@ -75,27 +76,41 @@ transactionsRouter.post('/', verifyToken, async (req: Request, res: Response) =>
 
 
       await tx.event.update({
-        where: { id: eventId },
-        data: { availableSeats: { decrement: 1 } },
-      });
+              where: { id: eventId },
+              data: { availableSeats: { decrement: quantity } },
+            });
 
 
       const isFree = finalPrice <= 0;
 
 
       const booking = await tx.booking.create({
-        data: {
-          eventId,
-          userId: buyerId,
-          totalPrice: finalPrice,
-          status: isFree ? 'confirmed' : 'pending',
-          paymentStatus: isFree ? 'waived' : 'pending',
-          appliedPoints: pointsDeducted || 0,
-        },
-      });
+              data: {
+                eventId,
+                userId: buyerId,
+                totalPrice: finalPrice,
+                status: isFree ? 'confirmed' : 'pending',
+                paymentStatus: isFree ? 'waived' : 'pending',
+                appliedPoints: pointsDeducted || 0,
+              },
+            });
 
+            // Create BookingItem with quantity
+            const ticketType = await tx.ticketType.findFirst({ where: { eventId } });
+            if (ticketType) {
+              const pricePerItem = quantity > 0 ? finalPrice / quantity : 0;
+              await tx.bookingItem.create({
+                data: {
+                  bookingId: booking.id,
+                  ticketTypeId: ticketType.id,
+                  quantity,
+                  pricePerItem,
+                  subtotal: finalPrice,
+                },
+              });
+            }
 
-      await tx.transaction.create({
+            await tx.transaction.create({
         data: {
           eventId,
           buyerId,

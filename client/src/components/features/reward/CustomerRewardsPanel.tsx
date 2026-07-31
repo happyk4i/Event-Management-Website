@@ -13,7 +13,7 @@ export default function CustomerRewardsPanel({ currentUser, userProfile, copyRef
     <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
       {}
       <div className="bg-[#B388FF] nb-border p-5 nb-shadow nb-card-hover">
-        <span className="text-[10px] uppercase font-black tracking-widest text-[#1a1a2e] block mb-2">🎯 Your Referral Code</span>
+        <span className="text-[10px] uppercase font-black tracking-widest text-[#1a1a2e] block mb-2">Your Referral Code</span>
         <div className="flex items-center space-x-2.5">
           <span className="text-base font-mono font-black text-[#1a1a2e] tracking-wider bg-white nb-border px-3 py-1.5">{currentUser.referralCode}</span>
           <button
@@ -28,7 +28,7 @@ export default function CustomerRewardsPanel({ currentUser, userProfile, copyRef
 
       {}
       <div className="bg-[#FFD700] nb-border p-5 nb-shadow nb-card-hover">
-        <span className="text-[10px] uppercase font-black tracking-widest text-[#1a1a2e] block mb-2">💰 Points Balance</span>
+        <span className="text-[10px] uppercase font-black tracking-widest text-[#1a1a2e] block mb-2">Points Balance</span>
         <div className="flex items-center space-x-2">
           <Gift className="h-5 w-5" />
           <h4 className="text-xl font-black text-[#1a1a2e]">{formatRupiah(currentUser.pointsBalance)}</h4>
@@ -38,7 +38,7 @@ export default function CustomerRewardsPanel({ currentUser, userProfile, copyRef
 
       {}
       <div className="bg-[#7CFC00] nb-border p-5 nb-shadow nb-card-hover">
-        <span className="text-[10px] uppercase font-black tracking-widest text-[#1a1a2e] block mb-2">🎟️ Active Coupons</span>
+        <span className="text-[10px] uppercase font-black tracking-widest text-[#1a1a2e] block mb-2">Active Coupons</span>
         <div className="flex items-center space-x-2">
           <Tag className="h-5 w-5" />
           <span className="text-sm font-black text-[#1a1a2e]">

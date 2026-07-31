@@ -1,12 +1,11 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '../config/db.ts';
-import { verifyToken } from '../middlewares/auth.middleware.ts';
+import { verifyToken, authorizeRoles } from '../middlewares/auth.middleware.ts';
+import { uploadImage, deleteImage } from '../utils/cloudinary.js';
 
 export const eventsRouter = Router();
 
-
 const formatDate = (date: Date) => date.toISOString().split('T')[0];
-
 
 eventsRouter.get('/', async (req: Request, res: Response) => {
   try {
@@ -48,11 +47,9 @@ eventsRouter.get('/', async (req: Request, res: Response) => {
       include: { ticketTypes: true }
     });
 
-
     const formattedEvents = events.map(event => ({
       ...event,
       date: formatDate(event.date),
-
       ticketTypes: event.ticketTypes.map(tt => ({
         ...tt,
         price: Number(tt.price)
@@ -71,7 +68,6 @@ eventsRouter.get('/', async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Failed to fetch events' });
   }
 });
-
 
 eventsRouter.get('/:id', async (req: Request, res: Response) => {
   try {
@@ -93,7 +89,6 @@ eventsRouter.get('/:id', async (req: Request, res: Response) => {
       return;
     }
 
-
     const formattedEvent = {
       ...event,
       date: formatDate(event.date),
@@ -110,10 +105,10 @@ eventsRouter.get('/:id', async (req: Request, res: Response) => {
   }
 });
 
-
 eventsRouter.post('/', verifyToken, async (req: Request, res: Response) => {
   try {
-    const { name, code, category, price, capacity, availableSeats, date, time, location, description, status, createdById, ticketTypes } = req.body;
+    const { name, code, category, price, capacity, availableSeats, date, time, location, description, status, ticketTypes } = req.body;
+    const createdById = req.user?.id;
 
     if (!name || !code || !category || price === undefined || capacity === undefined || !date || !location || !status || !createdById) {
       res.status(400).json({ error: 'All required fields (name, code, category, price, capacity, date, location, status, createdById) are missing.' });
@@ -128,7 +123,7 @@ eventsRouter.post('/', verifyToken, async (req: Request, res: Response) => {
       res.status(400).json({ error: 'Invalid price or capacity.' });
       return;
     }
-    
+
     if (isNaN(eventAvailableSeats) || eventAvailableSeats < 0 || eventAvailableSeats > eventCapacity) {
       res.status(400).json({ error: 'Invalid available seats.' });
       return;
@@ -157,14 +152,16 @@ eventsRouter.post('/', verifyToken, async (req: Request, res: Response) => {
         description: description || '',
         status,
         createdById: createdById,
-        ticketTypes: {
-          create: ticketTypes.map((tt: any) => ({
-            name: tt.name,
-            price: parseFloat(String(tt.price)),
-            capacity: parseInt(String(tt.capacity), 10),
-            description: tt.description || ''
-          }))
-        }
+        ...(Array.isArray(ticketTypes) && ticketTypes.length > 0 ? {
+          ticketTypes: {
+            create: ticketTypes.map((tt) => ({
+              name: tt.name,
+              price: parseFloat(String(tt.price)),
+              capacity: parseInt(String(tt.capacity), 10),
+              description: tt.description || ''
+            }))
+          }
+        } : {})
       },
       include: { ticketTypes: true }
     });
@@ -175,7 +172,6 @@ eventsRouter.post('/', verifyToken, async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Failed to create event' });
   }
 });
-
 
 eventsRouter.put('/:id', verifyToken, async (req: Request, res: Response) => {
   try {
@@ -221,9 +217,8 @@ eventsRouter.put('/:id', verifyToken, async (req: Request, res: Response) => {
       }
     }
 
-
     await prisma.ticketType.deleteMany({ where: { eventId: id } });
-    
+
     const updatedEvent = await prisma.event.update({
       where: { id },
       data: {
@@ -258,11 +253,9 @@ eventsRouter.put('/:id', verifyToken, async (req: Request, res: Response) => {
   }
 });
 
-
-eventsRouter.delete('/:id', verifyToken, async (req: Request, res: Response) => {
+eventsRouter.delete('/:id', verifyToken, authorizeRoles('Admin'), async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-
     const event = await prisma.event.findUnique({
       where: { id }
     });
@@ -272,6 +265,10 @@ eventsRouter.delete('/:id', verifyToken, async (req: Request, res: Response) => 
       return;
     }
 
+    // Delete Cloudinary image
+    if (event.imagePublicId) {
+      await deleteImage(event.imagePublicId).catch(() => { });
+    }
 
     await prisma.bookingItem.deleteMany({ where: { booking: { eventId: id } } });
     await prisma.booking.deleteMany({ where: { eventId: id } });
@@ -286,5 +283,120 @@ eventsRouter.delete('/:id', verifyToken, async (req: Request, res: Response) => 
   } catch (error: any) {
     console.error('Error deleting event:', error);
     res.status(500).json({ error: 'Failed to delete event' });
+  }
+});
+
+// POST /api/events/seed - Seed 30 events with images
+eventsRouter.post('/seed', verifyToken, async (req: Request, res: Response) => {
+  try {
+    const { count = 30 } = req.body;
+    const eventsToSeed = Math.min(Number(count), 100);
+
+    console.log(`🌱 Starting seed process for ${eventsToSeed} events...`);
+
+    const CATEGORIES = [
+      'Music',
+      'Technology',
+      'Arts & Crafts',
+      'Food & Culinary',
+      'Workshop',
+      'Sports',
+    ];
+
+    const eventsData = Array.from({ length: eventsToSeed }, (_, i) => {
+      const monthsAhead = Math.floor(i / 3) + 1;
+      const date = new Date();
+      date.setMonth(date.getMonth() + monthsAhead);
+      date.setDate(Math.floor(Math.random() * 28) + 1);
+
+      const category = CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)];
+      const price = [0, 0, 0, 50000, 100000, 150000, 200000, 500000][Math.floor(Math.random() * 8)];
+      const capacity = [100, 200, 500, 1000, 2000][Math.floor(Math.random() * 5)];
+
+      return {
+        name: `Event ${i + 1}`,
+        code: `EV-${i + 100}`,
+        category,
+        description: `Exciting ${category.toLowerCase()} event in Indonesia. Book early for amazing experiences!`,
+        price,
+        capacity,
+        availableSeats: capacity,
+        date,
+        time: '19:00',
+        location: ['Jakarta', 'Bandung', 'Surabaya', 'Yogyakarta', 'Denpasar'][Math.floor(Math.random() * 5)],
+        status: 'Active',
+        imageUrl: '',
+        imagePublicId: '',
+      };
+    });
+
+    let uploaded = 0;
+    let created = 0;
+
+    for (let i = 0; i < eventsData.length; i++) {
+      const event = eventsData[i];
+      try {
+        const imageUrl = `https://picsum.photos/seed/${event.code}/800/400`;
+        const response = await fetch(imageUrl);
+        const arrayBuffer = await response.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+
+        const uploadResult = await uploadImage(
+          buffer,
+          'eventkuy/event-images',
+          response.headers.get('content-type') || 'image/jpeg'
+        );
+
+        event.imageUrl = uploadResult.url;
+        event.imagePublicId = uploadResult.publicId;
+        uploaded++;
+      } catch (uploadError: any) {
+        console.error(`  ❌ Event ${i + 1} failed to upload image:`, uploadError.message);
+      }
+    }
+
+    for (let i = 0; i < eventsData.length; i++) {
+      const event = eventsData[i];
+      try {
+        await prisma.event.create({
+          data: {
+            name: event.name,
+            code: event.code,
+            category: event.category,
+            description: event.description,
+            price: event.price,
+            capacity: event.capacity,
+            availableSeats: event.availableSeats,
+            date: event.date,
+            time: event.time,
+            location: event.location,
+            status: event.status,
+            imageUrl: event.imageUrl,
+            imagePublicId: event.imagePublicId,
+            createdById: 'cms8mqnrl00002kbwezae2t5n', // Admin ID
+            ticketTypes: {
+              create: [{
+                name: 'VIP Access',
+                price: event.price === 0 ? 0 : event.price * 1.5,
+                capacity: event.availableSeats,
+                description: 'Early access and exclusive seating',
+              }],
+            },
+          }
+        });
+        created++;
+      } catch (createError: any) {
+        console.error(`  ❌ Event ${i + 1} failed to create:`, createError.message);
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `Successfully seeded ${created} events with ${uploaded} images.`,
+      stats: { uploaded, created, total: eventsToSeed },
+    });
+  } catch (error: any) {
+    console.error('❌ Error during seed:', error);
+    res.status(500).json({ error: error.message || 'Seed failed.' });
   }
 });

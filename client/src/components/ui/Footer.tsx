@@ -13,7 +13,7 @@ export default function Footer() {
           </div>
         </div>
         <div className="flex items-center space-x-4">
-          {['🎵 Music', '💻 Tech', '🎨 Art', '🍜 Food', '🏆 Sports'].map((cat) => (
+          {['Music', 'Tech', 'Art', 'Food', 'Sports'].map((cat) => (
             <span key={cat} className="bg-[#1a1a2e] text-gray-300 border-2 border-gray-600 px-3 py-1 text-[10px] font-bold uppercase hover:border-[#FFD700] hover:text-[#FFD700] transition-colors cursor-pointer">
               {cat}
             </span>

@@ -4,7 +4,7 @@ import { Calendar, Loader2, MapPin, Send, Sparkles, Ticket, Trash2, Tag } from '
 type Message = { role: 'user' | 'assistant'; content: string };
 type Event = { id: string; name: string; category: string; price: number; date: string; time: string; location: string; description: string; availableSeats: number; code: string };
 
-const welcome: Message = { role: 'assistant', content: 'Halo! Saya asisten **Event Kuy** 🎫\n\nKetik apa yang kamu cari, misalnya:\n• "Cari event musik di Jakarta"\n• "Workshop di bawah 300 ribu"\n• "Food festival di Bali"\n• "Event teknologi minggu ini"' };
+const welcome: Message = { role: 'assistant', content: 'Halo! Saya asisten **Event Kuy**\n\nKetik apa yang kamu cari, misalnya:\n• "Cari event musik di Jakarta"\n• "Workshop di bawah 300 ribu"\n• "Food festival di Bali"\n• "Event teknologi minggu ini"' };
 const rupiah = (price: number) => `Rp ${new Intl.NumberFormat('id-ID').format(price)}`;
 
 export default function EventChat({ onClose }: { onClose?: () => void }) {
@@ -89,7 +89,7 @@ export default function EventChat({ onClose }: { onClose?: () => void }) {
                   <Calendar size={12} /> {new Date(event.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })} · {event.time}
                 </p>
                 <div className="chatbot-event-footer">
-                  <strong>{event.price === 0 ? '🎉 GRATIS' : rupiah(event.price)}</strong>
+                  <strong>{event.price === 0 ? 'GRATIS' : rupiah(event.price)}</strong>
                   <span className={`chatbot-seat ${event.availableSeats < 15 ? 'low' : 'avail'}`}>
                     {event.availableSeats} kursi
                   </span>

@@ -5,15 +5,13 @@ import { verifyToken, authorizeRoles, AuthenticatedUser } from '../middlewares/a
 export const dashboardRouter = Router();
 
 
-dashboardRouter.get('/stats/:organizerId', verifyToken, authorizeRoles('Organizer'), async (req: Request, res: Response) => {
+dashboardRouter.get('/stats', verifyToken, authorizeRoles('Organizer'), async (req: Request, res: Response) => {
   try {
-    const { organizerId } = req.params;
-    const currentUser = (req as any).user as AuthenticatedUser | undefined;
-
-
-    if (currentUser?.id !== organizerId) {
-      return res.status(403).json({ error: 'Access denied. You cannot view this dashboard.' });
+    const currentUser = (req as any).user as AuthenticatedUser;
+    if (!currentUser) {
+      return res.status(401).json({ error: 'Unauthorized' });
     }
+    const organizerId = currentUser.id;
 
 
     const organizerEvents = await prisma.event.findMany({
@@ -70,14 +68,13 @@ dashboardRouter.get('/stats/:organizerId', verifyToken, authorizeRoles('Organize
 });
 
 
-dashboardRouter.get('/bookings/:userId', verifyToken, async (req: Request, res: Response) => {
+dashboardRouter.get('/bookings', verifyToken, async (req: Request, res: Response) => {
   try {
-    const { userId } = req.params;
-    const currentUser = (req as any).user as AuthenticatedUser | undefined;
-
-    if (currentUser?.id !== userId && currentUser?.role !== 'Organizer') {
-      return res.status(403).json({ error: 'Access denied' });
+    const currentUser = (req as any).user as AuthenticatedUser;
+    if (!currentUser) {
+      return res.status(401).json({ error: 'Unauthorized' });
     }
+    const userId = currentUser.id;
 
     const bookings = await prisma.booking.findMany({
       where: { userId },

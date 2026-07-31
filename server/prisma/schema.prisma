@@ -44,6 +44,8 @@ model Event {
   capacity       Int
   availableSeats Int
   status         String      @default("Active") // "Active", "Cancelled", "Sold Out", "Draft"
+  imageUrl       String      @default("")
+  imagePublicId  String      @default("")
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
   
