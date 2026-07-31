@@ -161,10 +161,11 @@ export default function App() {
 
 
   const [isDetailsOpen, setIsDetailsOpen] = useState<boolean>(false);
-  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
-  const [selectedEventReviews, setSelectedEventReviews] = useState<Review[]>([]);
-  const [reviewsStats, setReviewsStats] = useState<{ totalReviews: number; averageRating: number }>({ totalReviews: 0, averageRating: 0 });
-  const [isReviewsLoading, setIsReviewsLoading] = useState<boolean>(false);
+    const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+    const [selectedEventReviews, setSelectedEventReviews] = useState<Review[]>([]);
+    const [reviewsStats, setReviewsStats] = useState<{ totalReviews: number; averageRating: number }>({ totalReviews: 0, averageRating: 0 });
+    const [isReviewsLoading, setIsReviewsLoading] = useState<boolean>(false);
+    const [quantity, setQuantity] = useState<number>(1);
 
 
   const [applyCouponId, setApplyCouponId] = useState<string>('');
@@ -287,8 +288,11 @@ export default function App() {
           pointRecords: data.pointRecords || [],
           coupons: data.coupons || []
         });
-        if (data.user && data.user.pointsBalance !== currentUser.pointsBalance) {
-          setCurrentUser(prev => prev ? { ...prev, pointsBalance: data.user.pointsBalance } : null);
+        if (data.referralCode) {
+          setCurrentUser(prev => prev ? { ...prev, referralCode: data.referralCode } : null);
+        }
+        if (data.pointsBalance !== undefined && currentUser && data.pointsBalance !== currentUser.pointsBalance) {
+          setCurrentUser(prev => prev ? { ...prev, pointsBalance: data.pointsBalance } : null);
         }
       } else {
         console.error('Failed to fetch user profile:', res.status);
@@ -497,15 +501,16 @@ export default function App() {
 
 
   const handleOpenDetails = (event: Event) => {
-    setSelectedEvent(event);
-    setApplyCouponId('');
-    setRedeemPoints(false);
-    setPointsToUseInput(0);
-    setUserFeedback('');
-    setFeedbackError(null);
-    setIsDetailsOpen(true);
-    fetchEventReviews(event.id);
-  };
+      setSelectedEvent(event);
+      setApplyCouponId('');
+      setRedeemPoints(false);
+      setPointsToUseInput(0);
+      setQuantity(1);
+      setUserFeedback('');
+      setFeedbackError(null);
+      setIsDetailsOpen(true);
+      fetchEventReviews(event.id);
+    };
 
 
   const handleBookTicket = () => {
@@ -539,11 +544,12 @@ export default function App() {
           'Authorization': `Bearer ${authToken}`
         },
         body: JSON.stringify({
-          eventId: selectedEvent.id,
-          buyerId: currentUser.id,
-          useCouponId: applyCouponId || null,
-          usePointsAmount: redeemPoints ? pointsToUseInput : 0
-        })
+                  eventId: selectedEvent.id,
+                  buyerId: currentUser.id,
+                  quantity: Math.max(1, Math.min(quantity, selectedEvent.availableSeats)),
+                  useCouponId: applyCouponId || null,
+                  usePointsAmount: redeemPoints ? pointsToUseInput : 0
+                })
       });
 
       const data = await res.json();
@@ -812,8 +818,9 @@ export default function App() {
 
 
   const getCheckoutPricing = () => {
-    if (!selectedEvent) return { originalPrice: 0, earlyBird: 0, coupon: 0, points: 0, finalPrice: 0 };
-    let orig = selectedEvent.price;
+      if (!selectedEvent) return { originalPrice: 0, earlyBird: 0, coupon: 0, points: 0, finalPrice: 0 };
+      const qty = Math.max(1, Math.min(quantity, selectedEvent.availableSeats));
+      let orig = selectedEvent.price * qty;
 
 
     let earlyBird = 0;
@@ -900,7 +907,16 @@ export default function App() {
                 currentUser={currentUser}
                 userProfile={userProfile}
                 copyReferralCode={(code) => {
-                  navigator.clipboard.writeText(code);
+                  navigator.clipboard.writeText(code).catch(() => {
+                    const ta = document.createElement('textarea');
+                    ta.value = code;
+                    ta.style.position = 'fixed';
+                    ta.style.opacity = '0';
+                    document.body.appendChild(ta);
+                    ta.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(ta);
+                  });
                   showToast('Referral code copied to clipboard!');
                 }}
               />
@@ -1060,9 +1076,11 @@ export default function App() {
         pointsToUseInput={pointsToUseInput}
         setPointsToUseInput={setPointsToUseInput}
         checkoutPricing={checkoutPricing}
-        handleBookTicket={handleBookTicket}
-        isBooking={isBooking}
-      />
+                handleBookTicket={handleBookTicket}
+                isBooking={isBooking}
+                quantity={quantity}
+                setQuantity={setQuantity}
+              />
 
       { }
       {currentUser && (

@@ -109,18 +109,27 @@ export default function EventCatalog({
           const accent = accents[index % accents.length];
           return (
             <div
-              key={ev.id}
-              onClick={() => onOpenDetails(ev)}
-              className={`bg-white nb-border-thick nb-card-hover flex flex-col cursor-pointer relative group overflow-hidden animate-card-enter stagger-${(index % 6) + 1}`}
-              style={{ boxShadow: `4px 4px 0px #1a1a2e` }}
-            >
-              <div className="h-2" style={{ backgroundColor: accent }} />
-              <div className="px-5 pt-4 flex items-center justify-between">
+                          key={ev.id}
+                          onClick={() => onOpenDetails(ev)}
+                          className={`bg-white nb-border-thick nb-card-hover flex flex-col cursor-pointer relative group overflow-hidden animate-card-enter stagger-${(index % 6) + 1}`}
+                          style={{ boxShadow: `4px 4px 0px #1a1a2e` }}
+                        >
+                          {ev.imageUrl ? (
+                            <img
+                              src={ev.imageUrl}
+                              alt={ev.name}
+                              className="h-36 w-full object-cover border-b-3 border-[#1a1a2e]"
+                              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                            />
+                          ) : (
+                            <div className="h-2" style={{ backgroundColor: accent }} />
+                          )}
+                          <div className="px-5 pt-4 flex items-center justify-between">
                 <span className={`text-[10px] font-black uppercase tracking-wider px-3 py-1.5 border-2 ${getCategoryColor(ev.category)} flex items-center space-x-1.5`}>
                   <span>{getCategoryIcon(ev.category)}</span>
                   <span>{ev.category}</span>
                 </span>
-                {currentUser && currentUser.role === 'Organizer' && currentUser.id === ev.organizerId && (
+                {currentUser && (currentUser.role === 'Admin' || (currentUser.role === 'Organizer' && currentUser.id === ev.organizerId)) && (
                   <div className="flex items-center space-x-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button onClick={(e) => onOpenEdit(ev, e)} className="nb-btn p-1.5 bg-[#00D4FF] text-[#1a1a2e] border-2" title="Edit Event">️</button>
                     <button onClick={(e) => onDeleteEvent(ev.id, ev.name, e)} className="nb-btn p-1.5 bg-[#FF4757] text-white border-2" title="Delete Event">🗑️</button>

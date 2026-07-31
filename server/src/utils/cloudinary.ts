@@ -12,16 +12,14 @@ cloudinary.config({
 
 export const uploadImage = async (
   buffer: Buffer,
-  _folder: string,
+  folder: string,
   _mimetype: string
 ): Promise<{ url: string; publicId: string }> => {
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
       {
-        folder: 'eventkuy/payment-proofs',
+        folder,
         resource_type: 'image',
-        type: 'authenticated',
-
       },
       (error, result) => {
         if (error || !result) {

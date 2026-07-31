@@ -27,9 +27,11 @@ type Props = {
   pointsToUseInput: number;
   setPointsToUseInput: (n: number) => void;
   checkoutPricing: { originalPrice: number; earlyBird: number; coupon: number; points: number; finalPrice: number };
-  handleBookTicket: () => void;
-  isBooking: boolean;
-};
+    handleBookTicket: () => void;
+    isBooking: boolean;
+    quantity: number;
+    setQuantity: (n: number) => void;
+  };
 
 const getCategoryIcon = (category: string) => {
   switch (category) {
@@ -59,7 +61,8 @@ export default function EventDetailsModal({
   isDetailsOpen, selectedEvent, setIsDetailsOpen, reviewsStats, selectedEventReviews, isReviewsLoading,
   hasPurchasedSelectedEvent, handleSubmitFeedback, userRating, setUserRating, userFeedback, setUserFeedback,
   feedbackError, isSubmittingFeedback, currentUser, userProfile, applyCouponId, setApplyCouponId,
-  redeemPoints, setRedeemPoints, pointsToUseInput, setPointsToUseInput, checkoutPricing, handleBookTicket, isBooking
+  redeemPoints, setRedeemPoints, pointsToUseInput, setPointsToUseInput, checkoutPricing, handleBookTicket, isBooking,
+  quantity, setQuantity
 }: Props) {
   if (!isDetailsOpen || !selectedEvent) return null;
   return (
@@ -69,10 +72,21 @@ export default function EventDetailsModal({
           <X className="h-4 w-4" />
         </button>
 
-        {}
-        <div className="md:col-span-7 p-6 space-y-5">
-          <div className="h-2 -mx-6 -mt-6 mb-4 bg-[#FF6B9D]" />
-          <div className="space-y-2">
+        {/* Left panel — event info */}
+                <div className="md:col-span-7 p-6 space-y-5">
+                  {selectedEvent.imageUrl ? (
+                    <div className="-mx-6 -mt-6 mb-4">
+                      <img
+                        src={selectedEvent.imageUrl}
+                        alt={selectedEvent.name}
+                        className="w-full h-48 object-cover border-b-3 border-[#1a1a2e]"
+                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                      />
+                    </div>
+                  ) : (
+                    <div className="h-2 -mx-6 -mt-6 mb-4 bg-[#FF6B9D]" />
+                  )}
+                  <div className="space-y-2">
             <span className={`text-[10px] font-black uppercase tracking-wider px-3 py-1.5 border-2 ${getCategoryColor(selectedEvent.category)} inline-flex items-center space-x-1`}>
               <span>{getCategoryIcon(selectedEvent.category)}</span>
               <span>{selectedEvent.category}</span>
@@ -190,7 +204,25 @@ export default function EventDetailsModal({
               {selectedEvent.price > 0 && <p className="text-[10px] text-[#1a1a2e]/70 font-bold">* 5% early-bird discount if booked 30+ days ahead</p>}
             </div>
 
-            {selectedEvent.price > 0 && currentUser && currentUser.role === 'Customer' && (
+                        {/* Quantity stepper */}
+                        <div className="flex items-center justify-between bg-white/10 p-3 border-2 border-[#FFD700]/30">
+                          <span className="text-xs font-black text-white">Quantity</span>
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                              className="nb-btn w-8 h-8 bg-[#FFD700] text-[#1a1a2e] text-sm font-black"
+                              disabled={quantity <= 1}
+                            >-</button>
+                            <span className="text-sm font-black text-[#FFD700] w-8 text-center">{quantity}</span>
+                            <button
+                              onClick={() => setQuantity(Math.min(selectedEvent.availableSeats, quantity + 1))}
+                              className="nb-btn w-8 h-8 bg-[#FFD700] text-[#1a1a2e] text-sm font-black"
+                              disabled={quantity >= selectedEvent.availableSeats}
+                            >+</button>
+                          </div>
+                        </div>
+
+                        {selectedEvent.price > 0 && currentUser && currentUser.role === 'Customer' && (
               <div className="space-y-3">
                 {userProfile?.coupons && userProfile.coupons.length > 0 && (
                   <div className="bg-white/10 p-3.5 border-2 border-[#FFD700]/30 space-y-2">
@@ -256,7 +288,7 @@ export default function EventDetailsModal({
             disabled={isBooking || selectedEvent.availableSeats <= 0}
             className={`w-full py-3.5 nb-btn text-sm ${selectedEvent.availableSeats <= 0 ? 'bg-gray-600 text-gray-400 cursor-not-allowed border-gray-500' : 'bg-[#FFD700] text-[#1a1a2e] animate-pulse-glow'}`}
           >
-            {isBooking ? 'Processing...' : selectedEvent.availableSeats <= 0 ? 'SOLD OUT' : 'Confirm & Purchase Ticket'}
+            {isBooking ? 'Processing...' : selectedEvent.availableSeats <= 0 ? 'SOLD OUT' : `Confirm & Purchase ${quantity} Ticket${quantity > 1 ? 's' : ''}`}
           </button>
         </div>
       </div>
